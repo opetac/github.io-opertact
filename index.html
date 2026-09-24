@@ -1,190 +1,209 @@
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Motor de Consulta de Inteligencia - BD Client-Side</title>
-
-    <!-- Tailwind CSS & FontAwesome -->
+    <title>Base de Datos Inteligente | Consulta Multibase</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- PapaParse para procesamiento CSV ultra rápido -->
+    <!-- PapaParse CDN para lectura ultrarrápida de CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: { 50: '#eff6ff', 500: '#3b82f6', 600: '#2563eb', 900: '#1e3a8a', 950: '#0f172a' }
-                    }
-                }
-            }
-        }
-    </script>
     <style>
-        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #0f172a; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); }
+        .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 0.8s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col custom-scroll">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-blue-600 selection:text-white">
 
-    <!-- Navegación y Encabezado -->
-    <header class="glass border-b border-slate-800 sticky top-0 z-30 shadow-2xl">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+    <!-- BARRA SUPERIOR DE NAVEGACIÓN GLOBAL -->
+    <header id="appHeader" class="hidden bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-30 shadow-xl">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
             
-            <!-- Marca y Control de Historial (Avanzar/Regresar) -->
-            <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
-                <div class="flex items-center gap-2">
-                    <button id="btnBack" onclick="goBack()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition" title="Regresar" disabled>
-                        <i class="fa-solid fa-arrow-left"></i>
-                    </button>
-                    <button id="btnForward" onclick="goForward()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition" title="Avanzar" disabled>
-                        <i class="fa-solid fa-arrow-right"></i>
-                    </button>
-                </div>
-
-                <a href="#" onclick="navTo('home')" class="text-lg font-bold tracking-wider text-white flex items-center gap-2">
-                    <i class="fa-solid fa-database text-blue-500"></i>
-                    <span>CONSULTA<span class="text-blue-500">DB</span></span>
-                </a>
-
-                <div class="md:hidden">
-                    <button onclick="syncDatabases()" class="p-2 bg-blue-600/20 text-blue-400 rounded-lg text-xs font-semibold">
-                        <i class="fa-solid fa-rotate"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Buscador Global -->
-            <div class="w-full md:w-1/2 relative">
-                <div class="relative flex items-center">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 text-slate-400 text-sm"></i>
-                    <input type="text" id="searchInput" onkeyup="handleKeySearch(event)" placeholder="Buscar por nombre, folio, placa, CURP o coincidencia..." 
-                           class="w-full bg-slate-900/90 text-white pl-10 pr-24 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm transition">
-                    <button onclick="executeSearch()" class="absolute right-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-1.5 rounded-lg transition">
-                        Buscar
-                    </button>
-                </div>
-            </div>
-
-            <!-- Botón de Sincronización e Indicador -->
-            <div class="hidden md:flex items-center gap-3">
-                <button onclick="syncDatabases()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs px-3 py-2 rounded-xl text-slate-300 transition">
-                    <i id="syncIcon" class="fa-solid fa-arrows-rotate text-blue-400"></i>
-                    <span>Actualizar BD</span>
+            <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                <button onclick="navegarA('home')" class="text-lg font-black tracking-wider text-white hover:text-blue-400 transition flex items-center gap-2">
+                    <span class="bg-blue-600 text-white text-xs px-2 py-1 rounded-md font-extrabold">BD</span>
+                    INTELIGENTE
                 </button>
+                <button id="btnVolver" onclick="volverAtras()" class="hidden text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
+                    &larr; Regresar
+                </button>
+            </div>
+
+            <!-- BUSCADOR INTELIGENTE EN EL HEADER -->
+            <form id="searchForm" class="flex w-full sm:w-1/2">
+                <input type="text" id="searchInput" placeholder="Buscar por nombre, folio, placa, CURP o palabra clave..." class="w-full bg-slate-900 text-white rounded-l-xl px-4 py-2 text-sm border border-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 text-sm font-semibold rounded-r-xl transition flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    Buscar
+                </button>
+            </form>
+
+            <div class="flex items-center gap-3">
+                <span id="userNameDisplay" class="text-xs text-blue-300 bg-blue-950/80 border border-blue-800 px-3 py-1 rounded-full font-medium"></span>
+                <button onclick="cerrarSesion()" class="text-xs text-red-400 hover:text-red-300 font-semibold transition">Salir</button>
             </div>
         </div>
     </header>
 
-    <!-- Barra de Estado de Registros -->
-    <div class="bg-slate-900 border-b border-slate-800/80 px-4 py-2 text-xs text-slate-400">
-        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
-            <div class="flex items-center gap-4">
-                <span><i class="fa-solid fa-server text-emerald-400 mr-1.5"></i>Bases indexadas: <strong id="lblBasesCount" class="text-slate-200">9/9</strong></span>
-                <span><i class="fa-solid fa-list-check text-blue-400 mr-1.5"></i>Total de registros: <strong id="lblTotalRecords" class="text-slate-200">0</strong></span>
-            </div>
-            <div id="statusBadge" class="flex items-center gap-2 text-emerald-400 font-medium">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Sistema Listo
-            </div>
-        </div>
-    </div>
+    <!-- CONTENEDOR PRINCIPAL DE VISTAS -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
 
-    <!-- CUALIDADES Y VISTAS DE LA APLICACIÓN -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 relative">
+        <!-- VISTA 1: INICIO DE SESIÓN -->
+        <section id="view-login" class="max-w-md mx-auto my-12">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 w-32 h-32 bg-blue-600/10 rounded-full blur-2xl"></div>
+                <h2 class="text-2xl font-black text-center text-white mb-1">Iniciar Sesión</h2>
+                <p class="text-slate-400 text-xs text-center mb-6">Acceso seguro a la Base de Datos Consulta Inteligente</p>
 
-        <!-- VISTA 1: INICIO / DASHBOARD -->
-        <section id="view-home" class="py-12 space-y-8">
-            <div class="text-center max-w-2xl mx-auto space-y-4">
-                <div class="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 px-4 py-1.5 rounded-full text-xs font-semibold">
-                    <i class="fa-solid fa-bolt"></i> Motor de Búsqueda Inteligente Client-Side
+                <form id="loginForm" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Usuario</label>
+                        <input type="text" id="loginUser" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Contraseña</label>
+                        <input type="password" id="loginPass" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-blue-600/20">Ingresar al Sistema</button>
+                </form>
+
+                <div class="mt-6 text-center text-xs text-slate-400 border-t border-slate-800/80 pt-4">
+                    ¿No tienes un usuario registrado? <button onclick="navegarA('register')" class="text-blue-400 font-semibold hover:underline">Registrarse aquí</button>
                 </div>
-                <h1 class="text-3xl md:text-5xl font-black text-white tracking-tight">
-                    Consulta Centralizada de Información
-                </h1>
-                <p class="text-slate-400 text-sm md:text-base">
-                    Realiza consultas en tiempo real sobre 9 matrices documentales integradas. El sistema extrae, clasifica y formatea fotografías de forma automática.
+            </div>
+        </section>
+
+        <!-- VISTA 2: REGISTRO DE USUARIO -->
+        <section id="view-register" class="hidden max-w-md mx-auto my-12">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
+                <h2 class="text-2xl font-black text-center text-white mb-1">Crear Cuenta</h2>
+                <p class="text-slate-400 text-xs text-center mb-6">Registro de nuevo operador en el sistema</p>
+
+                <form id="registerForm" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Nombre Completo</label>
+                        <input type="text" id="regNombre" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Usuario</label>
+                        <input type="text" id="regUser" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Contraseña</label>
+                        <input type="password" id="regPass" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-emerald-600/20">Completar Registro</button>
+                </form>
+
+                <div class="mt-6 text-center text-xs text-slate-400 border-t border-slate-800/80 pt-4">
+                    ¿Ya posees una cuenta? <button onclick="navegarA('login')" class="text-blue-400 font-semibold hover:underline">Volver a inicio de sesión</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA 3: INICIO DE BIENVENIDA -->
+        <section id="view-home" class="hidden text-center py-16">
+            <div class="max-w-3xl mx-auto space-y-6">
+                <span class="bg-blue-900/40 text-blue-400 border border-blue-800 text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-widest">
+                    Sistema Activo de Consulta Inteligente
+                </span>
+                <h2 class="text-3xl sm:text-5xl font-black text-white leading-tight">
+                    Búsqueda Consolidada de Información
+                </h2>
+                <p class="text-slate-400 text-sm sm:text-base leading-relaxed">
+                    Ingresa un dato de búsqueda en la barra superior. El sistema escaneará dinámicamente las 9 bases de datos enlazadas, estructurando la información con galerías fotográficas en la parte superior y orden lógico de atributos.
                 </p>
-            </div>
 
-            <!-- Tarjetas Informativas de las 9 Fuentes -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6" id="sourcesGrid">
-                <!-- Se generan dinámicamente -->
-            </div>
-        </section>
-
-        <!-- VISTA 2: RESULTADOS DE BÚSQUEDA -->
-        <section id="view-results" class="hidden space-y-6">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-                <div>
-                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
-                        <span>Resultados de la consulta</span>
-                        <span id="badgeMatchCount" class="bg-blue-600 text-white text-xs px-2.5 py-0.5 rounded-full font-bold">0</span>
-                    </h2>
-                    <p class="text-xs text-slate-400 mt-0.5">Coincidencias encontradas en los registros escaneados</p>
-                </div>
-
-                <!-- Filtro por Fuente -->
-                <div class="flex items-center gap-2">
-                    <label class="text-xs text-slate-400">Filtrar por origen:</label>
-                    <select id="filterSource" onchange="applyFilters()" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-blue-500">
-                        <option value="ALL">Todas las bases de datos</option>
-                    </select>
+                <!-- Estado del Servidor/Hojas -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6">
+                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+                        <span class="block text-2xl font-black text-blue-500">9</span>
+                        <span class="text-[11px] text-slate-400 font-medium">Bases de Datos</span>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+                        <span id="statTotalRegistros" class="block text-2xl font-black text-emerald-500">--</span>
+                        <span class="text-[11px] text-slate-400 font-medium">Registros Escaneables</span>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+                        <span class="block text-2xl font-black text-purple-500">100%</span>
+                        <span class="text-[11px] text-slate-400 font-medium">Cliente Ligero</span>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+                        <span class="block text-2xl font-black text-amber-500">Visor</span>
+                        <span class="text-[11px] text-slate-400 font-medium">Fotos HD</span>
+                    </div>
                 </div>
             </div>
-
-            <!-- Grilla de Resultados -->
-            <div id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
-        </section>
-
-        <!-- VISTA 3: DETALLE DEL REGISTRO -->
-        <section id="view-detail" class="hidden max-w-4xl mx-auto space-y-6">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-                <div>
-                    <span id="detailBadgeSource" class="text-xs font-bold uppercase tracking-wider text-blue-400 bg-blue-950 border border-blue-800 px-2.5 py-1 rounded-md"></span>
-                    <h2 class="text-2xl font-black text-white mt-2">Detalle del Registro</h2>
-                </div>
-                <button onclick="navTo('results')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg transition">
-                    <i class="fa-solid fa-arrow-left mr-1"></i> Volver a Resultados
-                </button>
-            </div>
-
-            <div id="detailContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </section>
 
         <!-- VISTA 4: CARGANDO -->
-        <section id="view-loading" class="hidden py-24 text-center space-y-4">
-            <div class="inline-block animate-spin text-blue-500 text-4xl">
-                <i class="fa-solid fa-circle-notch"></i>
+        <section id="view-loading" class="hidden flex flex-col items-center justify-center py-24">
+            <div class="spinner mb-4"></div>
+            <p id="loadingText" class="text-slate-400 text-sm animate-pulse font-medium">Procesando y organizando información...</p>
+        </section>
+
+        <!-- VISTA 5: RESULTADOS DE BÚSQUEDA -->
+        <section id="view-results" class="hidden space-y-6">
+            <!-- Resumen Inteligente de la Búsqueda -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
+                <div>
+                    <h3 class="text-lg font-bold text-white">Resultados Encontrados</h3>
+                    <p class="text-xs text-slate-400">Total escrutado: <span id="lblTotalEscaneados" class="font-bold text-slate-200">0</span> registros en las 9 bases de datos</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="bg-emerald-950 border border-emerald-800 text-emerald-400 text-xs font-bold px-4 py-2 rounded-xl">
+                        <span id="lblTotalEncontrados" class="text-sm font-black">0</span> coincidencias halladas
+                    </span>
+                    <button onclick="navegarA('home')" class="text-xs text-slate-400 hover:text-white underline">Nueva búsqueda</button>
+                </div>
             </div>
-            <p id="loadingMessage" class="text-slate-300 font-medium text-sm">Cargando e indexando registros...</p>
-            <div class="max-w-md mx-auto bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
-                <div id="progressBar" class="bg-blue-600 h-full w-0 transition-all duration-300"></div>
+
+            <!-- Malla de Tarjetas de Resultados -->
+            <div id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <!-- VISTA 6: DETALLE EXTENDIDO DE REGISTRO -->
+        <section id="view-detail" class="hidden max-w-4xl mx-auto space-y-6">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                <h3 class="text-xl font-black text-white flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                    Ficha Técnica de Información
+                </h3>
+                <button onclick="volverAtras()" class="text-xs text-blue-400 hover:underline font-semibold">&larr; Regresar a la lista</button>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6">
+                <!-- SECCIÓN SUPERIOR: GALERÍA DE FOTOGRAFÍAS -->
+                <div id="detailPhotosSection" class="hidden border-b border-slate-800 pb-6">
+                    <h4 class="text-xs font-extrabold uppercase text-slate-400 tracking-wider mb-3">Fotografías e Imágenes Adjuntas</h4>
+                    <div id="detailPhotosGrid" class="flex flex-wrap gap-4"></div>
+                </div>
+
+                <!-- SECCIÓN INFERIOR: INFORMACIÓN ORGANIZADA -->
+                <div>
+                    <h4 class="text-xs font-extrabold uppercase text-slate-400 tracking-wider mb-3">Atributos y Datos Razonados</h4>
+                    <div id="detailFieldsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                </div>
             </div>
         </section>
 
     </main>
 
-    <!-- MODAL VISOR DE IMÁGENES -->
-    <div id="imageModal" class="hidden fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 backdrop-blur-md">
-        <button onclick="closeImageModal()" class="absolute top-5 right-5 text-white/80 hover:text-white text-3xl font-bold transition z-10">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-        <div class="max-w-5xl max-h-[90vh] flex flex-col items-center">
-            <img id="modalImgTarget" src="" class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl border border-slate-800">
-            <p id="modalImgCaption" class="text-slate-400 text-xs mt-3 text-center"></p>
-        </div>
+    <!-- MODAL DE VISOR DE IMAGEN AMPLIDA -->
+    <div id="imageModal" class="hidden fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
+        <button onclick="cerrarVisorImagen()" class="absolute top-5 right-5 text-white/80 hover:text-white text-4xl font-bold transition">&times;</button>
+        <img id="modalImageTarget" src="" class="max-w-full max-h-[90vh] rounded-xl shadow-2xl object-contain border border-slate-800">
     </div>
 
-    <!-- SCRIPT PRINCIPAL -->
+    <!-- SCRIPT PRINCIPAL DE LÓGICA DE NEGOCIO -->
     <script>
-        // LISTA DE LAS 9 HOJAS DE CÁLCULO
-        const SHEET_IDS = [
+        // CONFIGURACIÓN DE ENLACES DE GOOGLE SHEETS
+        const USERS_SHEET_ID = '1vYqMxZbNIsTx5Kud_9bFiiI-OYme08ZlJFCzLVKXsiI';
+        
+        const DATA_SHEET_IDS = [
             '1y9ef2PcnhtqzmbKNS0cfYqmEzn1lnAge2uGQQ4FyfxE',
             '1I8IYqBXEm4QrudMw-JeIEcIr0etmET70',
             '10PU5bReY0LtH_ugQXE3SnCR-qdmZJpnzS1EQynUab_Q',
@@ -196,323 +215,354 @@
             '18yIgXP0KHrAOtPcGP0kOGGyijfaD-dTC'
         ];
 
-        // ESTADO GLOBAL DE LA APLICACIÓN
-        let database = [];          // Contiene todos los registros normalizados
-        let currentResults = [];    // Resultados filtrados de la búsqueda
-        let historyStack = [];      // Historial de navegación (Regresar)
-        let forwardStack = [];      // Historial para Avanzar
-        let currentView = 'home';
-        let currentRecord = null;
+        // VARIABLES DE ESTADO Y ARCHIVO DE NAVEGACIÓN
+        let historialNavegacion = [];
+        let vistaActual = 'login';
+        let datosResultados = [];
+        let cacheBasesDeDatos = null;
+        let usuariosRegistradosRemoto = [];
 
         // INICIALIZACIÓN
-        window.addEventListener('DOMContentLoaded', () => {
-            renderSourcesCards();
-            syncDatabases();
-        });
+        window.onload = async () => {
+            const userLogged = localStorage.getItem('appUser');
+            if (userLogged) {
+                document.getElementById('userNameDisplay').innerText = localStorage.getItem('appName') || userLogged;
+                document.getElementById('appHeader').classList.remove('hidden');
+                navegarA('home', true);
+            } else {
+                navegarA('login', true);
+            }
+            // Cargar usuarios en segundo plano desde el Google Sheet especificado
+            cargarUsuariosRemotos();
+        };
 
-        // NAVEGACIÓN Y MANEJO DE HISTORIAL
-        function navTo(viewName, recordData = null) {
-            if (currentView !== viewName) {
-                historyStack.push({ view: currentView, record: currentRecord });
-                forwardStack = []; // Limpiar forward stack al navegar a nueva vista
+        // ENLACE A CSV PÚBLICO DE GOOGLE SHEETS
+        function getCsvUrl(sheetId) {
+            return `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
+        }
+
+        // CONTROLADOR DE NAVEGACIÓN Y VISTAS (SPA)
+        function navegarA(vista, resetHistorial = false) {
+            if (resetHistorial) {
+                historialNavegacion = [];
+            } else if (vistaActual !== vista) {
+                historialNavegacion.push(vistaActual);
             }
 
-            currentView = viewName;
-            if (recordData) currentRecord = recordData;
-
-            renderView();
-            updateHistoryButtons();
-        }
-
-        function goBack() {
-            if (historyStack.length === 0) return;
-            forwardStack.push({ view: currentView, record: currentRecord });
-            
-            const prev = historyStack.pop();
-            currentView = prev.view;
-            currentRecord = prev.record;
-
-            renderView();
-            updateHistoryButtons();
-        }
-
-        function goForward() {
-            if (forwardStack.length === 0) return;
-            historyStack.push({ view: currentView, record: currentRecord });
-
-            const next = forwardStack.pop();
-            currentView = next.view;
-            currentRecord = next.record;
-
-            renderView();
-            updateHistoryButtons();
-        }
-
-        function updateHistoryButtons() {
-            document.getElementById('btnBack').disabled = historyStack.length === 0;
-            document.getElementById('btnForward').disabled = forwardStack.length === 0;
-        }
-
-        function renderView() {
+            vistaActual = vista;
             document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
-            document.getElementById(`view-${currentView}`).classList.remove('hidden');
+            document.getElementById(`view-${vista}`).classList.remove('hidden');
 
-            if (currentView === 'detail' && currentRecord) {
-                renderDetailContent(currentRecord);
+            const btnVolver = document.getElementById('btnVolver');
+            if (historialNavegacion.length > 0 && vista !== 'login' && vista !== 'register') {
+                btnVolver.classList.remove('hidden');
+            } else {
+                btnVolver.classList.add('hidden');
             }
         }
 
-        // CARGA Y SINCRONIZACIÓN CLIENT-SIDE DESDE GOOGLE SHEETS
-        async function syncDatabases() {
-            database = [];
-            navTo('loading');
-            
-            const syncIcon = document.getElementById('syncIcon');
-            if (syncIcon) syncIcon.classList.add('fa-spin');
+        function volverAtras() {
+            if (historialNavegacion.length > 0) {
+                const vistaAnterior = historialNavegacion.pop();
+                vistaActual = vistaAnterior;
+                document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+                document.getElementById(`view-${vistaAnterior}`).classList.remove('hidden');
 
-            const statusBadge = document.getElementById('statusBadge');
-            statusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span> Descargando datos...`;
-            statusBadge.className = "flex items-center gap-2 text-yellow-400 font-medium";
-
-            let loadedSheets = 0;
-
-            for (let i = 0; i < SHEET_IDS.length; i++) {
-                const sheetId = SHEET_IDS[i];
-                document.getElementById('loadingMessage').innerText = `Procesando Base de Datos ${i + 1} de ${SHEET_IDS.length}...`;
-                document.getElementById('progressBar').style.width = `${Math.round(((i + 1) / SHEET_IDS.length) * 100)}%`;
-
-                // Endpoint público para obtener CSV directo de Google Sheets
-                const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
-
-                try {
-                    const response = await fetch(csvUrl);
-                    if (response.ok) {
-                        const csvText = await response.text();
-                        const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
-
-                        if (parsed.data && parsed.data.length > 0) {
-                            parsed.data.forEach(row => {
-                                database.push({
-                                    _dbIndex: i + 1,
-                                    _dbName: `Base de Datos #${i + 1}`,
-                                    _raw: row
-                                });
-                            });
-                            loadedSheets++;
-                        }
-                    }
-                } catch (err) {
-                    console.warn(`No se pudo leer la hoja ${sheetId}:`, err);
+                if (historialNavegacion.length === 0) {
+                    document.getElementById('btnVolver').classList.add('hidden');
                 }
             }
+        }
 
-            // Actualizar Estadísticas
-            document.getElementById('lblBasesCount').innerText = `${loadedSheets}/${SHEET_IDS.length}`;
-            document.getElementById('lblTotalRecords').innerText = database.length.toLocaleString();
+        function cerrarSesion() {
+            localStorage.clear();
+            document.getElementById('appHeader').classList.add('hidden');
+            navegarA('login', true);
+        }
 
-            if (syncIcon) syncIcon.classList.remove('fa-spin');
-
-            statusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> ${database.length.toLocaleString()} Registros Activos`;
-            statusBadge.className = "flex items-center gap-2 text-emerald-400 font-medium";
-
-            populateFilterOptions();
-            
-            // Volver a inicio si estábamos cargando
-            if (currentView === 'loading') {
-                navTo('home');
+        // CARGAR Y VALIDAR USUARIOS DESDE GOOGLE SHEETS
+        async function cargarUsuariosRemotos() {
+            try {
+                const response = await fetch(getCsvUrl(USERS_SHEET_ID));
+                const csvText = await response.text();
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: (results) => {
+                        usuariosRegistradosRemoto = results.data;
+                    }
+                });
+            } catch (err) {
+                console.warn("No se pudo cargar la hoja remota de usuarios. Se usarán registros locales.");
             }
         }
 
-        // MOTOR DE BÚSQUEDA INTELIGENTE
-        function handleKeySearch(e) {
-            if (e.key === 'Enter') executeSearch();
-        }
+        // AUTENTICACIÓN: LOGIN Y REGISTRO
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const u = document.getElementById('loginUser').value.trim().toLowerCase();
+            const p = document.getElementById('loginPass').value.trim();
 
-        function executeSearch() {
-            const query = document.getElementById('searchInput').value.trim().toLowerCase();
-            if (!query) return;
+            navegarA('loading');
+            document.getElementById('loadingText').innerText = "Verificando usuario...";
 
-            // Búsqueda inteligente multitermino
-            const terms = query.split(' ').filter(t => t.length > 0);
-
-            currentResults = database.filter(item => {
-                const valuesString = Object.values(item._raw).join(' ').toLowerCase();
-                return terms.every(term => valuesString.includes(term));
+            // Buscar primero en los usuarios remotos cargados del Sheet
+            let usuarioEncontrado = usuariosRegistradosRemoto.find(row => {
+                const userKey = Object.keys(row).find(k => k.toLowerCase().includes('usuario') || k.toLowerCase().includes('user'));
+                const passKey = Object.keys(row).find(k => k.toLowerCase().includes('password') || k.toLowerCase().includes('contrase'));
+                return userKey && passKey && String(row[userKey]).trim().toLowerCase() === u && String(row[passKey]).trim() === p;
             });
 
-            renderResultsGrid(currentResults);
-            navTo('results');
-        }
-
-        function applyFilters() {
-            const selectedSource = document.getElementById('filterSource').value;
-            let filtered = currentResults;
-
-            if (selectedSource !== 'ALL') {
-                filtered = currentResults.filter(r => r._dbName === selectedSource);
+            // Si no se encuentra en el sheet, verificar en LocalStorage (para nuevos registros sin backend)
+            if (!usuarioEncontrado) {
+                const usuariosLocales = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+                usuarioEncontrado = usuariosLocales.find(user => user.usuario.toLowerCase() === u && user.password === p);
             }
 
-            renderResultsGrid(filtered, false);
-        }
-
-        // PARSER INTELIGENTE DE IMÁGENES (Google Drive y Directas)
-        function extractImageUrl(value) {
-            if (!value) return null;
-            const str = String(value).trim();
-
-            if (str.match(/\.(jpeg|jpg|gif|png|webp)/i)) return str;
-
-            // Detección de Google Drive
-            const driveMatch = str.match(/\/d\/([a-zA-Z0-9_-]+)/) || str.match(/id=([a-zA-Z0-9_-]+)/);
-            if (driveMatch && driveMatch[1]) {
-                return `https://lh3.googleusercontent.com/d/${driveMatch[1]}`;
+            if (usuarioEncontrado) {
+                const nombre = usuarioEncontrado.Nombre || usuarioEncontrado.nombre || u;
+                localStorage.setItem('appUser', u);
+                localStorage.setItem('appName', nombre);
+                document.getElementById('userNameDisplay').innerText = nombre;
+                document.getElementById('appHeader').classList.remove('hidden');
+                navegarA('home', true);
+            } else {
+                alert("Usuario o contraseña incorrectos. Verifique sus datos.");
+                navegarA('login', true);
             }
+        });
 
-            return null;
-        }
+        document.getElementById('registerForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const n = document.getElementById('regNombre').value.trim();
+            const u = document.getElementById('regUser').value.trim();
+            const p = document.getElementById('regPass').value.trim();
 
-        // RENDERIZADO DE INTERFAZ
-        function renderSourcesCards() {
-            const grid = document.getElementById('sourcesGrid');
-            grid.innerHTML = '';
-
-            SHEET_IDS.forEach((id, idx) => {
-                const card = document.createElement('div');
-                card.className = "bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between";
-                card.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-lg bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-sm">
-                            #${idx + 1}
-                        </div>
-                        <div>
-                            <h4 class="text-xs font-bold text-white">Matriz Documental ${idx + 1}</h4>
-                            <p class="text-[10px] text-slate-500 font-mono truncate max-w-[150px]">${id}</p>
-                        </div>
-                    </div>
-                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        function populateFilterOptions() {
-            const select = document.getElementById('filterSource');
-            select.innerHTML = '<option value="ALL">Todas las bases de datos</option>';
-
-            const sources = [...new Set(database.map(d => d._dbName))];
-            sources.forEach(src => {
-                select.innerHTML += `<option value="${src}">${src}</option>`;
-            });
-        }
-
-        function renderResultsGrid(resultsList, updateBadge = true) {
-            const grid = document.getElementById('resultsGrid');
-            grid.innerHTML = '';
-
-            if (updateBadge) {
-                document.getElementById('badgeMatchCount').innerText = resultsList.length.toLocaleString();
-            }
-
-            if (resultsList.length === 0) {
-                grid.innerHTML = `
-                    <div class="col-span-full py-16 text-center space-y-3">
-                        <i class="fa-solid fa-folder-open text-4xl text-slate-600"></i>
-                        <p class="text-slate-400 text-sm">No se encontraron registros coincidentes.</p>
-                    </div>`;
+            if (!n || !u || !p) {
+                alert("Todos los campos son obligatorios.");
                 return;
             }
 
-            resultsList.forEach(item => {
-                const card = document.createElement('div');
-                card.className = "bg-slate-900 border border-slate-800 hover:border-blue-500/50 p-5 rounded-2xl cursor-pointer transition-all duration-200 flex flex-col justify-between group shadow-lg";
+            // Guardar usuario en LocalStorage para acceso inmediato en navegador
+            const usuariosLocales = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+            const yaExiste = usuariosLocales.some(user => user.usuario.toLowerCase() === u.toLowerCase());
 
-                let imageHtml = '';
-                let infoHtml = '';
-                let imageFound = false;
+            if (yaExiste) {
+                alert("El usuario ya existe.");
+                return;
+            }
 
-                Object.entries(item._raw).forEach(([key, val]) => {
-                    if (!val) return;
-                    const imgUrl = extractImageUrl(val);
+            usuariosLocales.push({ nombre: n, usuario: u, password: p, fecha: new Date().toISOString() });
+            localStorage.setItem('registeredUsers', JSON.stringify(usuariosLocales));
 
-                    if (imgUrl && !imageFound) {
-                        imageFound = true;
-                        imageHtml = `
-                            <div class="mb-3 h-44 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 relative">
-                                <img src="${imgUrl}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.parentElement.style.display='none'">
-                            </div>`;
-                    } else if (!String(val).startsWith('http') && infoHtml.split('</p>').length <= 4) {
-                        infoHtml += `
-                            <div class="mb-2">
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">${key}</span>
-                                <p class="text-xs text-slate-200 truncate font-medium">${val}</p>
-                            </div>`;
-                    }
-                });
+            alert("¡Registro exitoso! Ya puedes iniciar sesión.");
+            navegarA('login', true);
+        });
 
-                card.innerHTML = `
-                    <div>
-                        ${imageHtml}
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-[10px] bg-blue-950 border border-blue-800 text-blue-300 font-bold px-2 py-0.5 rounded">
-                                ${item._dbName}
-                            </span>
-                        </div>
-                        ${infoHtml}
-                    </div>
-                    <div class="pt-3 mt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-blue-400 font-semibold">
-                        <span>Ver Ficha Completa</span>
-                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition"></i>
-                    </div>
-                `;
-
-                card.onclick = () => navTo('detail', item);
-                grid.appendChild(card);
-            });
+        // PARSER INTELIGENTE DE IMÁGENES (CONVIERTE URLS DE GOOGLE DRIVE Y ENLACES DIRECTOS)
+        function extraerUrlImagen(valor) {
+            if (!valor) return null;
+            const str = String(valor).trim();
+            if (str.match(/\.(jpeg|jpg|gif|png|webp|bmp)/i)) return str;
+            
+            const matchDrive = str.match(/\/d\/([a-zA-Z0-9_-]+)/) || str.match(/id=([a-zA-Z0-9_-]+)/);
+            if (matchDrive && matchDrive[1]) {
+                return `https://lh3.googleusercontent.com/d/${matchDrive[1]}`;
+            }
+            return null;
         }
 
-        function renderDetailContent(item) {
-            document.getElementById('detailBadgeSource').innerText = item._dbName;
-            const container = document.getElementById('detailContainer');
+        // DESCARGAR Y PROCESAR LAS 9 BASES DE DATOS EN PARALELO
+        async function buscarEnBasesDeDatos(query) {
+            navegarA('loading');
+            document.getElementById('loadingText').innerText = "Consultando simultáneamente las 9 bases de datos...";
+
+            const q = query.toLowerCase().trim();
+            let totalEscrutados = 0;
+            let resultados = [];
+
+            const promesas = DATA_SHEET_IDS.map(async (sheetId, index) => {
+                try {
+                    const res = await fetch(getCsvUrl(sheetId));
+                    const text = await res.text();
+                    
+                    return new Promise((resolve) => {
+                        Papa.parse(text, {
+                            header: true,
+                            skipEmptyLines: true,
+                            complete: (parsed) => {
+                                let filasBase = parsed.data || [];
+                                resolve({ index: index + 1, filas: filasBase });
+                            },
+                            error: () => resolve({ index: index + 1, filas: [] })
+                        });
+                    });
+                } catch (e) {
+                    return { index: index + 1, filas: [] };
+                }
+            });
+
+            const basesResueltas = await Promise.all(promesas);
+
+            basesResueltas.forEach(base => {
+                totalEscrutados += base.filas.length;
+                base.filas.forEach(fila => {
+                    const coincide = Object.values(fila).some(val => String(val).toLowerCase().includes(q));
+                    if (coincide) {
+                        resultados.push({
+                            _base_origen: `Base de Datos #${base.index}`,
+                            _datos: fila
+                        });
+                    }
+                });
+            });
+
+            document.getElementById('lblTotalEscaneados').innerText = totalEscrutados.toLocaleString();
+            document.getElementById('lblTotalEncontrados').innerText = resultados.length.toLocaleString();
+            document.getElementById('statTotalRegistros').innerText = totalEscrutados.toLocaleString();
+
+            datosResultados = resultados;
+            renderizarTarjetasResultados();
+        }
+
+        document.getElementById('searchForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const q = document.getElementById('searchInput').value.trim();
+            if (q) buscarEnBasesDeDatos(q);
+        });
+
+        // RENDERIZADO DE RESULTADOS: FOTOGRAFÍAS EN LA PARTE SUPERIOR
+        function renderizarTarjetasResultados() {
+            const container = document.getElementById('resultsGrid');
             container.innerHTML = '';
 
-            Object.entries(item._raw).forEach(([key, val]) => {
-                if (!val && val !== 0) return;
+            if (datosResultados.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-16 bg-slate-900 border border-slate-800 rounded-2xl">
+                        <p class="text-slate-400 text-sm">No se hallaron coincidencias para el término ingresado.</p>
+                    </div>`;
+            } else {
+                datosResultados.forEach((item, index) => {
+                    const fila = item._datos;
+                    const card = document.createElement('div');
+                    card.className = "bg-slate-900 border border-slate-800 hover:border-blue-500/50 rounded-2xl p-5 shadow-xl cursor-pointer transition flex flex-col justify-between group";
 
-                const imgUrl = extractImageUrl(val);
-                const block = document.createElement('div');
-                block.className = "bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col justify-between";
+                    // 1. EXTRAER IMÁGENES PRIMERO
+                    let fotoPrincipal = null;
+                    let camposTexto = [];
 
-                let body = `<span class="text-[10px] font-bold uppercase text-blue-400 tracking-wider">${key}</span>`;
+                    Object.keys(fila).forEach(key => {
+                        const val = fila[key];
+                        if (!val) return;
 
+                        const imgUrl = extraerUrlImagen(val);
+                        if (imgUrl && !fotoPrincipal) {
+                            fotoPrincipal = imgUrl;
+                        } else if (!String(val).startsWith('http') && camposTexto.length < 5) {
+                            camposTexto.push({ clave: key, valor: val });
+                        }
+                    });
+
+                    // 2. CONSTRUIR HTML (FOTOGRAFÍA SIEMPRE EN LA PARTE SUPERIOR)
+                    let fotoHtml = fotoPrincipal 
+                        ? `<div class="mb-4 overflow-hidden rounded-xl bg-slate-950 border border-slate-800 h-48 w-full">
+                             <img src="${fotoPrincipal}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.parentElement.style.display='none'">
+                           </div>` 
+                        : '';
+
+                    let camposHtml = camposTexto.map(c => `
+                        <div class="mb-2">
+                            <span class="text-[10px] uppercase font-bold text-blue-400 block tracking-wider">${c.clave}</span>
+                            <p class="text-xs text-slate-200 truncate font-medium">${c.valor}</p>
+                        </div>
+                    `).join('');
+
+                    card.innerHTML = `
+                        <div>
+                            ${fotoHtml}
+                            <span class="inline-block text-[10px] bg-slate-800 text-slate-300 font-bold px-2.5 py-1 rounded-md mb-3 border border-slate-700">${item._base_origen}</span>
+                            ${camposHtml}
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                            <span class="text-[11px] text-slate-400">Clic para ampliar</span>
+                            <span class="text-xs text-blue-400 font-bold group-hover:translate-x-1 transition flex items-center gap-1">Ver Ficha &rarr;</span>
+                        </div>
+                    `;
+
+                    card.onclick = () => verDetalleRegistro(index);
+                    container.appendChild(card);
+                });
+            }
+            navegarA('results');
+        }
+
+        // VISTA DE DETALLE RAZONADO Y ORGANIZADO
+        function verDetalleRegistro(index) {
+            const item = datosResultados[index];
+            const fila = item._datos;
+
+            const photosGrid = document.getElementById('detailPhotosGrid');
+            const fieldsGrid = document.getElementById('detailFieldsGrid');
+            const photosSection = document.getElementById('detailPhotosSection');
+
+            photosGrid.innerHTML = '';
+            fieldsGrid.innerHTML = '';
+
+            let imagenesEncontradas = [];
+
+            Object.keys(fila).forEach(key => {
+                const val = fila[key];
+                if (!val) return;
+
+                const imgUrl = extraerUrlImagen(val);
                 if (imgUrl) {
-                    body += `
-                        <div class="mt-2 relative group cursor-pointer" onclick="openImageModal('${imgUrl}', '${key}')">
-                            <img src="${imgUrl}" class="h-48 w-full object-cover rounded-lg border border-slate-700">
-                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center rounded-lg text-white text-xs font-semibold">
-                                <i class="fa-solid fa-magnifying-glass-plus mr-1.5"></i> Ampliar Imagen
-                            </div>
-                        </div>`;
-                } else if (String(val).startsWith('http')) {
-                    body += `<a href="${val}" target="_blank" class="text-xs text-blue-400 hover:underline break-all mt-1 inline-block">${val}</a>`;
+                    imagenesEncontradas.push({ titulo: key, url: imgUrl });
                 } else {
-                    body += `<p class="text-xs text-slate-200 mt-1 whitespace-pre-wrap font-medium">${val}</p>`;
-                }
+                    const fieldDiv = document.createElement('div');
+                    fieldDiv.className = "bg-slate-950 border border-slate-800/80 p-3.5 rounded-xl flex flex-col justify-between";
+                    
+                    let content = `<span class="text-[10px] uppercase font-bold text-blue-400 block tracking-wider mb-1">${key}</span>`;
+                    
+                    if (String(val).startsWith('http')) {
+                        content += `<a href="${val}" target="_blank" class="text-xs text-blue-400 hover:underline break-all font-medium">${val}</a>`;
+                    } else {
+                        content += `<p class="text-xs text-slate-200 font-medium whitespace-pre-wrap">${val}</p>`;
+                    }
 
-                block.innerHTML = body;
-                container.appendChild(block);
+                    fieldDiv.innerHTML = content;
+                    fieldsGrid.appendChild(fieldDiv);
+                }
             });
+
+            // MOSTRAR FOTOGRAFÍAS EN LA PARTE SUPERIOR DE LA FICHA
+            if (imagenesEncontradas.length > 0) {
+                photosSection.classList.remove('hidden');
+                imagenesEncontradas.forEach(imgObj => {
+                    const imgContainer = document.createElement('div');
+                    imgContainer.className = "relative group cursor-pointer border border-slate-800 rounded-xl overflow-hidden bg-slate-950";
+                    imgContainer.innerHTML = `
+                        <img src="${imgObj.url}" class="h-44 w-auto object-cover rounded-xl group-hover:scale-105 transition duration-300">
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-bold">Ampliar</div>
+                    `;
+                    imgContainer.onclick = () => abrirVisorImagen(imgObj.url);
+                    photosGrid.appendChild(imgContainer);
+                });
+            } else {
+                photosSection.classList.add('hidden');
+            }
+
+            navegarA('detail');
         }
 
         // VISOR MODAL DE IMÁGENES
-        function openImageModal(url, caption = '') {
-            document.getElementById('modalImgTarget').src = url;
-            document.getElementById('modalImgCaption').innerText = caption;
+        function abrirVisorImagen(url) {
+            document.getElementById('modalImageTarget').src = url;
             document.getElementById('imageModal').classList.remove('hidden');
         }
 
-        function closeImageModal() {
+        function cerrarVisorImagen() {
             document.getElementById('imageModal').classList.add('hidden');
-            document.getElementById('modalImgTarget').src = '';
+            document.getElementById('modalImageTarget').src = '';
         }
     </script>
 </body>
