@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motor de Consulta | Inteligencia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans antialiased">
+
+    <!-- Navegación y Buscador (Oculto en Login) -->
+    <header id="mainHeader" class="hidden bg-slate-800 border-b border-slate-700 sticky top-0 z-10 shadow-lg">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
+            <h1 class="text-xl font-bold text-white cursor-pointer" onclick="navegar('inicio')">
+                <span class="text-blue-500">Consulta</span> Inteligente
+            </h1>
+            <form id="searchForm" class="flex w-full md:w-1/2 relative">
+                <input type="text" id="searchInput" placeholder="Buscar registros..." class="w-full bg-slate-700 text-white rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-r-lg font-medium transition">Buscar</button>
+            </form>
+            <div class="flex items-center gap-4">
+                <div id="statsBadge" class="hidden bg-slate-700 text-sm px-3 py-1 rounded-full text-slate-300">
+                    <span id="resultCount" class="font-bold text-blue-400">0</span> res.
+                </div>
+                <button onclick="cerrarSesion()" class="text-sm text-red-400 hover:text-red-300">Salir</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-8 relative">
+
+        <!-- Pantalla de Autenticación (Login / Registro) -->
+        <section id="view-auth" class="max-w-md mx-auto mt-10">
+            <div class="bg-slate-800 p-8 rounded-xl shadow-2xl border border-slate-700">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-white"><span class="text-blue-500">Acceso</span> al Sistema</h2>
+                    <p class="text-slate-400 text-sm mt-2">Bases de Datos de Inteligencia</p>
+                </div>
+
+                <!-- Formulario de Login -->
+                <form id="loginForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-1">Usuario</label>
+                        <input type="text" id="loginUser" required class="w-full bg-slate-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-1">Contraseña</label>
+                        <input type="password" id="loginPass" required class="w-full bg-slate-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition mt-4">Iniciar Sesión</button>
+                    <p class="text-center text-sm text-slate-400 mt-4">¿No tienes cuenta? <a href="#" onclick="toggleAuth()" class="text-blue-400 hover:underline">Regístrate</a></p>
+                </form>
+
+                <!-- Formulario de Registro -->
+                <form id="registerForm" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-1">Nombre Completo</label>
+                        <input type="text" id="regNombre" required class="w-full bg-slate-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-1">Usuario</label>
+                        <input type="text" id="regUser" required class="w-full bg-slate-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-1">Contraseña</label>
+                        <input type="password" id="regPass" required class="w-full bg-slate-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg transition mt-4">Crear Cuenta</button>
+                    <p class="text-center text-sm text-slate-400 mt-4">¿Ya tienes cuenta? <a href="#" onclick="toggleAuth()" class="text-blue-400 hover:underline">Inicia Sesión</a></p>
+                </form>
+            </div>
+        </section>
+        
+        <!-- Pantalla de Inicio (Búsqueda) -->
+        <section id="view-inicio" class="hidden text-center py-20">
+            <h2 class="text-3xl font-semibold text-white mb-4">Bienvenido, <span id="nombreUsuarioUI" class="text-blue-400">Usuario</span></h2>
+            <p class="text-slate-400 max-w-xl mx-auto">Ingresa tu consulta en el buscador superior. El sistema escaneará simultáneamente todas las bases de datos disponibles.</p>
+        </section>
+
+        <!-- Pantalla de Carga -->
+        <section id="view-cargando" class="hidden flex flex-col items-center justify-center py-20">
+            <div class="loader mb-4"></div>
+            <p id="loadingMsg" class="text-slate-400 animate-pulse">Procesando solicitud...</p>
+        </section>
+
+        <!-- Pantalla de Resultados -->
+        <section id="view-resultados" class="hidden">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-semibold text-white">Resultados</h3>
+                <button onclick="navegar('inicio')" class="text-blue-400 hover:text-blue-300 text-sm font-medium">&larr; Limpiar</button>
+            </div>
+            <div id="gridResultados" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <!-- Pantalla de Detalles -->
+        <section id="view-detalles" class="hidden">
+            <button onclick="navegar('resultados')" class="mb-6 inline-flex items-center text-blue-400 hover:text-blue-300 font-medium transition">
+                &larr; Volver
+            </button>
+            <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl" id="contenedorDetalles"></div>
+        </section>
+
+    </main>
+
+    <!-- Visor de Imagen -->
+    <div id="modalImagen" class="hidden fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
+        <button onclick="cerrarVisor()" class="absolute top-6 right-6 text-white text-3xl font-bold hover:text-red-500">&times;</button>
+        <img id="imagenVisor" src="" class="max-w-full max-h-full rounded-lg shadow-2xl">
+    </div>
+
+    <script>
+        // CONFIGURACIÓN: Inserta tu URL publicada de Apps Script aquí
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwbrnXKr0PqOjQSHi05XcH-6PZdYoSKYd-i4bk6lu60MBUGyoCvfQNRlNVUAn-hRUOM/exec'; 
+        
+        let datosGlobales = [];
+
+        // Inicialización de la App
+        window.onload = () => {
+            const user = localStorage.getItem('appUser');
+            if(user) {
+                document.getElementById('nombreUsuarioUI').innerText = localStorage.getItem('appName');
+                navegar('inicio');
+                document.getElementById('mainHeader').classList.remove('hidden');
+            } else {
+                navegar('auth');
+            }
+        };
+
+        function navegar(vista) {
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(`view-${vista}`).classList.remove('hidden');
+            
+            if(vista === 'auth') document.getElementById('mainHeader').classList.add('hidden');
+            if(vista === 'inicio') {
+                document.getElementById('searchInput').value = '';
+                document.getElementById('statsBadge').classList.add('hidden');
+            }
+        }
+
+        function toggleAuth() {
+            document.getElementById('loginForm').classList.toggle('hidden');
+            document.getElementById('registerForm').classList.toggle('hidden');
+        }
+
+        function cerrarSesion() {
+            localStorage.clear();
+            navegar('auth');
+        }
+
+        // Petición genérica al backend
+        async function fetchBackend(payload, loadingText) {
+            navegar('cargando');
+            document.getElementById('loadingMsg').innerText = loadingText;
+            
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    // Importante: text/plain evita el bloqueo preflight de CORS
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+                    body: JSON.stringify(payload)
+                });
+                return await response.json();
+            } catch (error) {
+                alert('Error de conexión con el servidor.');
+                navegar(localStorage.getItem('appUser') ? 'inicio' : 'auth');
+                return null;
+            }
+        }
+
+        // --- AUTH LOGIC ---
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const u = document.getElementById('loginUser').value;
+            const p = document.getElementById('loginPass').value;
+            
+            const res = await fetchBackend({ action: 'login', usuario: u, password: p }, 'Verificando credenciales...');
+            if(res && res.exito) {
+                localStorage.setItem('appUser', u);
+                localStorage.setItem('appName', res.nombre);
+                document.getElementById('nombreUsuarioUI').innerText = res.nombre;
+                document.getElementById('mainHeader').classList.remove('hidden');
+                navegar('inicio');
+            } else if(res) {
+                alert(res.mensaje);
+                navegar('auth');
+            }
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const n = document.getElementById('regNombre').value;
+            const u = document.getElementById('regUser').value;
+            const p = document.getElementById('regPass').value;
+            
+            const res = await fetchBackend({ action: 'register', nombre: n, usuario: u, password: p }, 'Registrando usuario...');
+            if(res && res.exito) {
+                alert('Registro exitoso. Ahora puedes iniciar sesión.');
+                toggleAuth();
+                navegar('auth');
+            } else if(res) {
+                alert(res.mensaje);
+                navegar('auth');
+            }
+        });
+
+        // --- SEARCH LOGIC ---
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const query = document.getElementById('searchInput').value.trim();
+            if(!query) return;
+
+            const res = await fetchBackend({ action: 'search', query: query }, 'Analizando bases de datos...');
+            if(res && res.exito) {
+                datosGlobales = res.datos;
+                document.getElementById('resultCount').innerText = res.total_encontrados;
+                document.getElementById('statsBadge').classList.remove('hidden');
+                renderizarResultados();
+            }
+        });
+
+        // Parsear URLs a imágenes
+        function procesarImagenURL(url) {
+            const stringUrl = String(url);
+            if(stringUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i)) return stringUrl;
+            const driveMatch = stringUrl.match(/\/d\/(.+?)\//) || stringUrl.match(/id=(.+?)(&|$)/);
+            if(driveMatch) return `https://drive.google.com/uc?export=view&id=${driveMatch[1]}`;
+            return null;
+        }
+
+        // --- RENDER LOGIC ---
+        function renderizarResultados() {
+            const grid = document.getElementById('gridResultados');
+            grid.innerHTML = '';
+            
+            if(datosGlobales.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-10 text-center text-slate-400">No se encontraron coincidencias.</div>`;
+            } else {
+                datosGlobales.forEach((registro, index) => {
+                    const card = document.createElement('div');
+                    card.className = "bg-slate-800 border border-slate-700 rounded-lg p-5 hover:border-blue-500 cursor-pointer transition flex flex-col";
+                    
+                    let resumenHtml = '';
+                    let keys = Object.keys(registro).filter(k => registro[k] !== "");
+                    
+                    keys.slice(0, 4).forEach(k => {
+                        let val = registro[k];
+                        let imgUrl = procesarImagenURL(val);
+                        if(imgUrl && !resumenHtml.includes('<img')) {
+                            resumenHtml = `<img src="${imgUrl}" class="w-full h-40 object-cover rounded mb-3 border border-slate-600" onerror="this.style.display='none'">${resumenHtml}`;
+                        } else if (!String(val).includes('http')) {
+                            resumenHtml += `<div class="mb-1"><span class="text-xs text-slate-500 uppercase">${k}</span><p class="text-sm text-slate-200 truncate">${val}</p></div>`;
+                        }
+                    });
+
+                    card.innerHTML = resumenHtml;
+                    card.onclick = () => verDetalle(index);
+                    grid.appendChild(card);
+                });
+            }
+            navegar('resultados');
+        }
+
+        function verDetalle(index) {
+            const registro = datosGlobales[index];
+            const contenedor = document.getElementById('contenedorDetalles');
+            contenedor.innerHTML = '';
+
+            let contenido = `<div class="grid grid-cols-1 md:grid-cols-2 gap-6">`;
+            Object.keys(registro).forEach(key => {
+                if(!registro[key]) return;
+                
+                const valor = registro[key];
+                const imgUrl = procesarImagenURL(valor);
+
+                contenido += `<div class="bg-slate-900 p-3 rounded-md border border-slate-700 break-words">
+                    <span class="block text-xs text-blue-400 uppercase font-semibold mb-1">${key}</span>`;
+                
+                if(imgUrl) {
+                    contenido += `<img src="${imgUrl}" class="mt-2 h-32 rounded cursor-pointer hover:opacity-80 border border-slate-600" onclick="abrirVisor('${imgUrl}')">`;
+                } else if(String(valor).startsWith('http')) {
+                    contenido += `<a href="${valor}" target="_blank" class="text-blue-500 hover:underline text-sm">${valor}</a>`;
+                } else {
+                    contenido += `<p class="text-white text-sm whitespace-pre-wrap">${valor}</p>`;
+                }
+                contenido += `</div>`;
+            });
+
+            contenedor.innerHTML = contenido + `</div>`;
+            navegar('detalles');
+        }
+
+        // Visor de Imágenes
+        function abrirVisor(src) {
+            document.getElementById('imagenVisor').src = src;
+            document.getElementById('modalImagen').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        function cerrarVisor() {
+            document.getElementById('modalImagen').classList.add('hidden');
+            document.getElementById('imagenVisor').src = '';
+            document.body.style.overflow = 'auto';
+        }
+    </script>
+</body>
+</html>
