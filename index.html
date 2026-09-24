@@ -3,373 +3,372 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Base de Datos de Consulta Inteligente</title>
+    <title>Plataforma de Consulta Inteligente</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: #3b82f6; border-radius: 50%; width: 38px; height: 38px; animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid #3b82f6; border-radius: 50%; width: 42px; height: 42px; animation: spin 0.8s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased">
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans antialiased">
 
-    <!-- Barra de Navegación -->
-    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
-            <div class="flex items-center gap-3 cursor-pointer" onclick="irAInicio()">
-                <div class="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg">CI</div>
-                <span class="font-bold text-lg tracking-wide">Consulta<span class="text-blue-500">Inteligente</span></span>
+    <!-- Encabezado Global -->
+    <header id="appHeader" class="hidden bg-slate-800/90 backdrop-blur border-b border-slate-700 sticky top-0 z-20 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-4">
+                <button onclick="navegarA('home')" class="text-xl font-bold tracking-wide text-white hover:text-blue-400 transition">
+                    <span class="text-blue-500">BD</span> Inteligente
+                </button>
+                <button id="btnVolver" onclick="volverVistaAnterior()" class="hidden text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg border border-slate-600 transition">
+                    &larr; Regresar
+                </button>
             </div>
 
-            <!-- Navegación según estado de sesión -->
-            <div id="navInvitado" class="flex items-center gap-3">
-                <button onclick="navegar('login')" class="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition">Iniciar Sesión</button>
-                <button onclick="navegar('registro')" class="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-md transition">Registrarse</button>
-            </div>
+            <!-- Buscador Superior -->
+            <form id="searchForm" class="flex w-full sm:w-1/2">
+                <input type="text" id="searchInput" placeholder="Escribe un nombre, código, folio o dato..." class="w-full bg-slate-950 text-white rounded-l-lg px-4 py-2 text-sm border border-slate-700 focus:outline-none focus:border-blue-500">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 text-sm font-semibold rounded-r-lg transition">Buscar</button>
+            </form>
 
-            <div id="navUsuario" class="hidden flex items-center gap-4">
-                <span class="text-sm text-slate-400">Usuario: <strong id="lblUsuario" class="text-blue-400"></strong></span>
-                <button onclick="navegar('busqueda')" class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-md border border-slate-700 transition">Buscador</button>
-                <button onclick="cerrarSesion()" class="px-3 py-1.5 text-xs font-medium bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-800/50 rounded-md transition">Cerrar Sesión</button>
+            <div class="flex items-center gap-3">
+                <span id="userNameDisplay" class="text-xs text-blue-300 bg-blue-950/60 border border-blue-800 px-3 py-1 rounded-full"></span>
+                <button onclick="cerrarSesion()" class="text-xs text-red-400 hover:text-red-300 font-medium">Salir</button>
             </div>
         </div>
     </header>
 
-    <!-- Contenedor Principal de Páginas -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 relative">
+    <!-- Contenedor Principal de Vistas -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
 
-        <!-- PÁGINA 1: INICIO DE SESIÓN -->
-        <section id="page-login" class="max-w-md mx-auto my-12">
-            <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl">
-                <h2 class="text-2xl font-bold text-white text-center mb-2">Iniciar Sesión</h2>
-                <p class="text-sm text-slate-400 text-center mb-6">Ingresa tus credenciales para acceder al sistema de consulta</p>
-                
-                <form id="formLogin" class="space-y-4">
+        <!-- 1. VISTA: LOGIN -->
+        <section id="view-login" class="max-w-md mx-auto my-12">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 shadow-2xl">
+                <h2 class="text-2xl font-bold text-center text-white mb-2">Iniciar Sesión</h2>
+                <p class="text-slate-400 text-xs text-center mb-6">Ingresa tus credenciales para acceder a la base de datos</p>
+
+                <form id="loginForm" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Usuario</label>
-                        <input type="text" id="logUser" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Usuario</label>
+                        <input type="text" id="loginUser" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Contraseña</label>
-                        <input type="password" id="logPass" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Contraseña</label>
+                        <input type="password" id="loginPass" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
                     </div>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-lg shadow-lg transition mt-2">Acceder</button>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg text-sm transition">Ingresar</button>
                 </form>
 
-                <div class="mt-6 text-center border-t border-slate-800 pt-4 text-sm text-slate-400">
-                    ¿No tienes una cuenta? <a href="#" onclick="navegar('registro')" class="text-blue-400 hover:underline">Regístrate aquí</a>
+                <div class="mt-6 text-center text-xs text-slate-400">
+                    ¿No tienes usuario? <button onclick="navegarA('register')" class="text-blue-400 font-semibold hover:underline">Regístrate aquí</button>
                 </div>
             </div>
         </section>
 
-        <!-- PÁGINA 2: REGISTRO -->
-        <section id="page-registro" class="hidden max-w-md mx-auto my-12">
-            <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl">
-                <h2 class="text-2xl font-bold text-white text-center mb-2">Crear Cuenta</h2>
-                <p class="text-sm text-slate-400 text-center mb-6">Tus datos se guardarán en la base de datos centralizada</p>
+        <!-- 2. VISTA: REGISTRO -->
+        <section id="view-register" class="hidden max-w-md mx-auto my-12">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 shadow-2xl">
+                <h2 class="text-2xl font-bold text-center text-white mb-2">Crear Cuenta</h2>
+                <p class="text-slate-400 text-xs text-center mb-6">Los datos se guardarán en la hoja de control asignada</p>
 
-                <form id="formRegistro" class="space-y-4">
+                <form id="registerForm" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Nombre Completo</label>
-                        <input type="text" id="regNombre" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Nombre Completo</label>
+                        <input type="text" id="regNombre" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Usuario</label>
-                        <input type="text" id="regUser" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Usuario</label>
+                        <input type="text" id="regUser" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Contraseña</label>
-                        <input type="password" id="regPass" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Contraseña</label>
+                        <input type="password" id="regPass" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
                     </div>
-                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-lg shadow-lg transition mt-2">Guardar Registro</button>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg text-sm transition">Registrar Cuenta</button>
                 </form>
 
-                <div class="mt-6 text-center border-t border-slate-800 pt-4 text-sm text-slate-400">
-                    ¿Ya posees una cuenta? <a href="#" onclick="navegar('login')" class="text-blue-400 hover:underline">Inicia sesión</a>
+                <div class="mt-6 text-center text-xs text-slate-400">
+                    ¿Ya tienes cuenta? <button onclick="navegarA('login')" class="text-blue-400 font-semibold hover:underline">Volver al inicio de sesión</button>
                 </div>
             </div>
         </section>
 
-        <!-- PÁGINA 3: BUSCADOR E INTELIGENCIA -->
-        <section id="page-busqueda" class="hidden space-y-6">
-            <!-- Barra superior de búsqueda y métricas -->
-            <div class="bg-slate-900 border border-slate-800 p-4 md:p-6 rounded-2xl shadow-xl flex flex-col md:flex-row gap-4 items-center justify-between">
-                <form id="formSearch" class="w-full md:w-2/3 flex gap-2">
-                    <input type="text" id="txtQuery" placeholder="Escribe un nombre, número, código, folio o parámetro..." required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-6 py-3 rounded-xl shadow-lg transition flex items-center gap-2">
-                        🔍 <span>Buscar</span>
-                    </button>
-                </form>
-
-                <div id="statsBox" class="hidden flex items-center gap-4 bg-slate-950 border border-slate-800 px-4 py-2.5 rounded-xl text-xs text-slate-400">
-                    <div>Encontrados: <strong id="cntEncontrados" class="text-blue-400 text-sm">0</strong></div>
-                    <div class="h-4 w-px bg-slate-800"></div>
-                    <div>Escrutados: <strong id="cntEscaneados" class="text-slate-200 text-sm">0</strong></div>
-                </div>
-            </div>
-
-            <!-- Grilla de Resultados -->
-            <div id="containerResultados" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                <div class="col-span-full py-16 text-center text-slate-500">
-                    Introduce un término de búsqueda para consultar en las 9 bases de datos.
-                </div>
+        <!-- 3. VISTA: INICIO / DASHBOARD -->
+        <section id="view-home" class="hidden text-center py-16">
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-4">Consulta Inteligente Multibase</h2>
+            <p class="text-slate-400 max-w-2xl mx-auto text-sm sm:text-base mb-8">
+                El sistema escanea en tiempo real 9 matrices documentales. Escribe tu búsqueda en el panel superior para obtener coincidencias e imágenes asociadas.
+            </p>
+            <div class="inline-flex items-center gap-2 bg-slate-800 border border-slate-700 px-6 py-3 rounded-xl text-slate-300 text-xs">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Conectado a 9 Libros de Google Sheets
             </div>
         </section>
 
-        <!-- PÁGINA 4: DETALLE DE REGISTRO -->
-        <section id="page-detalle" class="hidden space-y-4">
-            <div class="flex items-center justify-between">
-                <button onclick="navegar('busqueda')" class="px-4 py-2 text-sm bg-slate-900 hover:bg-slate-800 border border-slate-800 text-blue-400 rounded-lg transition">
-                    &larr; Volver a resultados
-                </button>
-                <span id="lblBaseOrigen" class="text-xs bg-slate-900 border border-slate-800 text-slate-400 px-3 py-1 rounded-full"></span>
-            </div>
-
-            <div id="contenidoDetalle" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl"></div>
-        </section>
-
-        <!-- PÁGINA DE CARGA GLOBAL -->
-        <section id="page-loading" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 flex flex-col items-center justify-center">
+        <!-- 4. VISTA: CARGANDO -->
+        <section id="view-loading" class="hidden flex flex-col items-center justify-center py-24">
             <div class="spinner mb-4"></div>
-            <p id="lblLoading" class="text-sm font-medium text-slate-300">Procesando solicitud...</p>
+            <p id="loadingText" class="text-slate-400 text-sm animate-pulse">Procesando consulta...</p>
+        </section>
+
+        <!-- 5. VISTA: RESULTADOS -->
+        <section id="view-results" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-800 pb-4 gap-2">
+                <div>
+                    <h3 class="text-xl font-bold text-white">Resultados de la Búsqueda</h3>
+                    <p class="text-xs text-slate-400">Escrutados: <span id="lblTotalEscrutados" class="font-semibold text-slate-200">0</span> registros</p>
+                </div>
+                <div class="bg-blue-950 border border-blue-800 text-blue-300 text-xs font-semibold px-4 py-1.5 rounded-full">
+                    <span id="lblTotalEncontrados">0</span> coincidencias encontradas
+                </div>
+            </div>
+
+            <div id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <!-- 6. VISTA: DETALLE DEL REGISTRO -->
+        <section id="view-detail" class="hidden max-w-4xl mx-auto space-y-6">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                <h3 class="text-lg font-bold text-white">Ficha Técnica Completa</h3>
+                <button onclick="navegarA('results')" class="text-xs text-blue-400 hover:underline">&larr; Volver a lista de resultados</button>
+            </div>
+            <div id="detailContent" class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </section>
 
     </main>
 
-    <!-- VISOR MODAL DE IMÁGENES -->
-    <div id="modalVisor" class="hidden fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4">
-        <button onclick="cerrarVisor()" class="absolute top-5 right-5 text-slate-400 hover:text-white text-3xl font-bold bg-slate-900/80 w-12 h-12 rounded-full border border-slate-700 flex items-center justify-center transition">&times;</button>
-        <img id="imgModal" src="" class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl border border-slate-800">
+    <!-- MODAL VISOR DE IMAGEN -->
+    <div id="imageModal" class="hidden fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 backdrop-blur-sm">
+        <button onclick="cerrarVisorImagen()" class="absolute top-5 right-5 text-white text-3xl font-bold hover:text-red-400 transition">&times;</button>
+        <img id="modalImageTarget" src="" class="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain">
     </div>
 
     <script>
-        // CONFIGURACIÓN CENTRAL: PEGA AQUÍ LA URL DE TU APPS SCRIPT PUBLICADO
+        // URL DE TU SCRIPT DE GOOGLE
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzlm8eX_OI3eNXqXqKLnmDWTqGIU3jUvmNu_fDTnZ-lzWx0_8nXthDN0QvwcfRCEoUZRA/exec';
 
-        let resultadosGlobales = [];
+        let historialVistas = [];
+        let vistaActual = 'login';
+        let datosResultados = [];
 
-        // Inicializador de Vista
-        window.addEventListener('DOMContentLoaded', () => {
-            const sesion = localStorage.getItem('ci_user');
-            if (sesion) {
-                establecerSesionUI(sesion);
-                navegar('busqueda');
+        window.onload = () => {
+            const userLogged = localStorage.getItem('appUser');
+            if (userLogged) {
+                document.getElementById('userNameDisplay').innerText = localStorage.getItem('appName') || userLogged;
+                document.getElementById('appHeader').classList.remove('hidden');
+                navegarA('home', true);
             } else {
-                navegar('login');
+                navegarA('login', true);
             }
-        });
+        };
 
-        function navegar(vista) {
-            ['login', 'registro', 'busqueda', 'detalle'].forEach(v => {
-                document.getElementById(`page-${v}`).classList.add('hidden');
-            });
-            document.getElementById(`page-${vista}`).classList.remove('hidden');
+        // GESTOR DE NAVEGACIÓN Y VISTAS (SPA)
+        function navegarA(vista, resetHistorial = false) {
+            if (resetHistorial) historialVistas = [];
+            else if (vistaActual !== vista) historialVistas.push(vistaActual);
+
+            vistaActual = vista;
+
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(`view-${vista}`).classList.remove('hidden');
+
+            const btnVolver = document.getElementById('btnVolver');
+            if (historialVistas.length > 0 && vista !== 'login' && vista !== 'register') {
+                btnVolver.classList.remove('hidden');
+            } else {
+                btnVolver.classList.add('hidden');
+            }
         }
 
-        function irAInicio() {
-            if (localStorage.getItem('ci_user')) {
-                navegar('busqueda');
-            } else {
-                navegar('login');
-            }
-        }
+        function volverVistaAnterior() {
+            if (historialVistas.length > 0) {
+                const vistaPrevia = historialVistas.pop();
+                vistaActual = vistaPrevia;
+                document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+                document.getElementById(`view-${vistaPrevia}`).classList.remove('hidden');
 
-        function establecerSesionUI(nombre) {
-            document.getElementById('lblUsuario').innerText = nombre;
-            document.getElementById('navInvitado').classList.add('hidden');
-            document.getElementById('navUsuario').classList.remove('hidden');
+                if (historialVistas.length === 0) {
+                    document.getElementById('btnVolver').classList.add('hidden');
+                }
+            }
         }
 
         function cerrarSesion() {
-            localStorage.removeItem('ci_user');
-            document.getElementById('navInvitado').classList.remove('hidden');
-            document.getElementById('navUsuario').classList.add('hidden');
-            navegar('login');
+            localStorage.clear();
+            document.getElementById('appHeader').classList.add('hidden');
+            navegarA('login', true);
         }
 
-        function mostrarCarga(mensaje) {
-            document.getElementById('lblLoading').innerText = mensaje || "Cargando...";
-            document.getElementById('page-loading').classList.remove('hidden');
-        }
+        // PETICIÓN HTTP CENTRALIZADA
+        async function enviarPeticion(bodyData, mensajeCarga) {
+            navegarA('loading');
+            document.getElementById('loadingText').innerText = mensajeCarga;
 
-        function ocultarCarga() {
-            document.getElementById('page-loading').classList.add('hidden');
-        }
-
-        // PETICIÓN HTTP POST (Soporta CORS enviando text/plain)
-        async function ejecutarPeticion(payload) {
             try {
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(bodyData)
                 });
                 return await response.json();
             } catch (err) {
-                alert("Error de conexión con el servidor. Revisa tu URL de despliegue y los permisos.");
-                return { exito: false };
+                alert("Error de conexión con el servidor Google Apps Script. Verifique la URL de publicación y permisos.");
+                volverVistaAnterior();
+                return null;
             }
         }
 
-        // LOGIN
-        document.getElementById('formLogin').addEventListener('submit', async (e) => {
+        // CONTROLADORES DE AUTENTICACIÓN
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            mostrarCarga("Validando credenciales...");
-            
-            const u = document.getElementById('logUser').value;
-            const p = document.getElementById('logPass').value;
+            const u = document.getElementById('loginUser').value;
+            const p = document.getElementById('loginPass').value;
 
-            const res = await ejecutarPeticion({ action: 'login', usuario: u, password: p });
-            ocultarCarga();
-
-            if (res.exito) {
-                localStorage.setItem('ci_user', res.nombre);
-                establecerSesionUI(res.nombre);
-                navegar('busqueda');
-            } else {
-                alert(res.mensaje || "Error al iniciar sesión.");
+            const res = await enviarPeticion({ action: 'login', usuario: u, password: p }, 'Verificando acceso...');
+            if (res && res.exito) {
+                localStorage.setItem('appUser', res.usuario);
+                localStorage.setItem('appName', res.nombre);
+                document.getElementById('userNameDisplay').innerText = res.nombre;
+                document.getElementById('appHeader').classList.remove('hidden');
+                navegarA('home', true);
+            } else if (res) {
+                alert(res.mensaje || "Error de inicio de sesión");
+                navegarA('login', true);
             }
         });
 
-        // REGISTRO
-        document.getElementById('formRegistro').addEventListener('submit', async (e) => {
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            mostrarCarga("Registrando cuenta...");
-
             const n = document.getElementById('regNombre').value;
             const u = document.getElementById('regUser').value;
             const p = document.getElementById('regPass').value;
 
-            const res = await ejecutarPeticion({ action: 'register', nombre: n, usuario: u, password: p });
-            ocultarCarga();
-
-            if (res.exito) {
-                alert("Registro completado con éxito. Ahora puedes iniciar sesión.");
-                document.getElementById('formRegistro').reset();
-                navegar('login');
-            } else {
-                alert(res.mensaje || "Error en el registro.");
+            const res = await enviarPeticion({ action: 'register', nombre: n, usuario: u, password: p }, 'Guardando registro...');
+            if (res && res.exito) {
+                alert(res.mensaje);
+                navegarA('login', true);
+            } else if (res) {
+                alert(res.mensaje || "No se pudo completar el registro");
+                navegarA('register', true);
             }
         });
 
-        // BÚSQUEDA
-        document.getElementById('formSearch').addEventListener('submit', async (e) => {
+        // BÚSQUEDA Y PROCESAMIENTO DE DATOS
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const q = document.getElementById('txtQuery').value.trim();
-            if(!q) return;
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
 
-            mostrarCarga("Consultando en las 9 bases de datos...");
-            const res = await ejecutarPeticion({ action: 'search', query: q });
-            ocultarCarga();
-
-            if (res.exito) {
-                resultadosGlobales = res.datos;
-                document.getElementById('cntEncontrados').innerText = res.total_encontrados;
-                document.getElementById('cntEscaneados').innerText = res.total_escaneados;
-                document.getElementById('statsBox').classList.remove('hidden');
-                renderizarResultados();
+            const res = await enviarPeticion({ action: 'search', query: query }, 'Buscando en las 9 bases de datos...');
+            if (res && res.exito) {
+                datosResultados = res.datos;
+                document.getElementById('lblTotalEncontrados').innerText = res.total_encontrados;
+                document.getElementById('lblTotalEscrutados').innerText = res.total_escrutados;
+                renderizarTarjetas();
             }
         });
 
-        // Convertir URLs de Drive o enlaces directos a miniaturas compatibles
+        // DETECTOR Y PARSER DE IMÁGENES (DRIVE Y DIRECTAS)
         function extraerUrlImagen(valor) {
             const str = String(valor).trim();
-            if (str.match(/\.(jpeg|jpg|png|gif|webp)$/i)) return str;
+            if (str.match(/\.(jpeg|jpg|gif|png|webp)/i)) return str;
             
-            const driveIdMatch = str.match(/\/d\/([a-zA-Z0-9_-]+)/) || str.match(/id=([a-zA-Z0-9_-]+)/);
-            if (driveIdMatch && driveIdMatch[1]) {
-                return `https://drive.google.com/thumbnail?id=${driveIdMatch[1]}&sz=w1000`;
+            const matchDrive = str.match(/\/d\/([a-zA-Z0-9_-]+)/) || str.match(/id=([a-zA-Z0-9_-]+)/);
+            if (matchDrive && matchDrive[1]) {
+                return `https://lh3.googleusercontent.com/d/${matchDrive[1]}`;
             }
             return null;
         }
 
-        // MOSTRAR TARJETAS EN GRID
-        function renderizarResultados() {
-            const grid = document.getElementById('containerResultados');
-            grid.innerHTML = '';
+        function renderizarTarjetas() {
+            const container = document.getElementById('resultsGrid');
+            container.innerHTML = '';
 
-            if (resultadosGlobales.length === 0) {
-                grid.innerHTML = `<div class="col-span-full py-16 text-center text-slate-500">No se hallaron coincidencias en ninguna base de datos.</div>`;
-                return;
-            }
+            if (datosResultados.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500">No se encontraron registros que coincidan con la búsqueda.</div>`;
+            } else {
+                datosResultados.forEach((item, index) => {
+                    const card = document.createElement('div');
+                    card.className = "bg-slate-800 border border-slate-700 hover:border-blue-500/50 rounded-xl p-5 shadow-lg cursor-pointer transition flex flex-col justify-between";
 
-            resultadosGlobales.forEach((item, index) => {
-                const card = document.createElement('div');
-                card.className = "bg-slate-900 border border-slate-800 hover:border-blue-500/50 rounded-xl p-5 cursor-pointer transition flex flex-col justify-between shadow-md hover:shadow-xl";
+                    let imgHtml = '';
+                    let infoHtml = '';
+                    let keys = Object.keys(item).filter(k => k !== '_base_origen' && item[k] !== "");
 
-                let fotoHtml = '';
-                let datosHtml = '';
-                let contadorCampos = 0;
+                    keys.forEach(k => {
+                        const val = item[k];
+                        const imgUrl = extraerUrlImagen(val);
 
-                Object.keys(item).forEach(key => {
-                    if (key === '_base_origen' || !item[key]) return;
-                    const val = item[key];
-                    const imgUrl = extraerUrlImagen(val);
+                        if (imgUrl && !imgHtml) {
+                            imgHtml = `<div class="mb-3 overflow-hidden rounded-lg bg-slate-950 border border-slate-700 h-40">
+                                <img src="${imgUrl}" class="w-full h-full object-cover" onerror="this.parentElement.style.display='none'">
+                            </div>`;
+                        } else if (!String(val).startsWith('http') && infoHtml.split('</p>').length <= 4) {
+                            infoHtml += `<div class="mb-2">
+                                <span class="text-[10px] uppercase font-bold text-slate-400 block">${k}</span>
+                                <p class="text-xs text-slate-200 truncate">${val}</p>
+                            </div>`;
+                        }
+                    });
 
-                    if (imgUrl && !fotoHtml) {
-                        fotoHtml = `<img src="${imgUrl}" class="w-full h-44 object-cover rounded-lg mb-3 border border-slate-800" onerror="this.style.display='none'">`;
-                    } else if (!String(val).startsWith('http') && contadorCampos < 4) {
-                        datosHtml += `<div class="mb-2"><span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider block">${key}</span><p class="text-sm text-slate-200 truncate">${val}</p></div>`;
-                        contadorCampos++;
-                    }
+                    card.innerHTML = `
+                        <div>
+                            ${imgHtml}
+                            <span class="inline-block text-[10px] bg-slate-700 text-blue-300 font-medium px-2 py-0.5 rounded mb-2">${item._base_origen}</span>
+                            ${infoHtml}
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-slate-700/50 text-right">
+                            <span class="text-xs text-blue-400 font-semibold hover:underline">Ver detalle completo &rarr;</span>
+                        </div>
+                    `;
+                    card.onclick = () => verDetalle(index);
+                    container.appendChild(card);
                 });
-
-                card.innerHTML = `
-                    <div>
-                        ${fotoHtml}
-                        ${datosHtml}
-                    </div>
-                    <div class="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-500">
-                        <span>${item._base_origen || 'Hoja'}</span>
-                        <span class="text-blue-400 font-medium">Ver detalle &rarr;</span>
-                    </div>
-                `;
-
-                card.onclick = () => abrirDetalle(index);
-                grid.appendChild(card);
-            });
+            }
+            navegarA('results');
         }
 
-        // VER DETALLE COMPLETO
-        function abrirDetalle(index) {
-            const reg = resultadosGlobales[index];
-            const contenedor = document.getElementById('contenidoDetalle');
-            document.getElementById('lblBaseOrigen').innerText = reg._base_origen || 'Registro';
-            
-            let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">`;
+        function verDetalle(index) {
+            const item = datosResultados[index];
+            const container = document.getElementById('detailContent');
+            container.innerHTML = '';
 
-            Object.keys(reg).forEach(key => {
-                if (key === '_base_origen' || !reg[key]) return;
-                const val = reg[key];
+            Object.keys(item).forEach(key => {
+                if (!item[key] && item[key] !== 0) return;
+
+                const val = item[key];
                 const imgUrl = extraerUrlImagen(val);
+                const fieldDiv = document.createElement('div');
+                fieldDiv.className = "bg-slate-900 border border-slate-700/70 p-3 rounded-lg flex flex-col justify-between";
 
-                html += `<div class="bg-slate-950 border border-slate-800 p-4 rounded-xl flex flex-col justify-between">
-                    <div>
-                        <span class="text-xs font-bold text-blue-400 uppercase tracking-wider block mb-1">${key}</span>`;
+                let content = `<span class="text-[10px] uppercase font-bold text-blue-400 mb-1">${key}</span>`;
 
                 if (imgUrl) {
-                    html += `<img src="${imgUrl}" class="mt-2 h-40 w-full object-cover rounded-lg cursor-pointer hover:opacity-90 border border-slate-800 transition" onclick="abrirVisor('${imgUrl}')">`;
+                    content += `
+                        <div class="mt-1">
+                            <img src="${imgUrl}" class="h-32 rounded border border-slate-700 object-cover cursor-pointer hover:opacity-80 transition" onclick="abrirVisorImagen('${imgUrl}')" title="Clic para ampliar">
+                        </div>`;
                 } else if (String(val).startsWith('http')) {
-                    html += `<a href="${val}" target="_blank" class="text-sm text-blue-400 hover:underline break-all">${val}</a>`;
+                    content += `<a href="${val}" target="_blank" class="text-xs text-blue-400 hover:underline break-all">${val}</a>`;
                 } else {
-                    html += `<p class="text-sm text-slate-200 whitespace-pre-wrap">${val}</p>`;
+                    content += `<p class="text-xs text-slate-200 whitespace-pre-wrap">${val}</p>`;
                 }
 
-                html += `</div></div>`;
+                fieldDiv.innerHTML = content;
+                container.appendChild(fieldDiv);
             });
 
-            html += `</div>`;
-            contenedor.innerHTML = html;
-            navegar('detalle');
+            navegarA('detail');
         }
 
-        // VISOR MODAL DE IMÁGENES
-        function abrirVisor(src) {
-            document.getElementById('imgModal').src = src;
-            document.getElementById('modalVisor').classList.remove('hidden');
+        // MODAL VISOR DE IMAGEN
+        function abrirVisorImagen(url) {
+            document.getElementById('modalImageTarget').src = url;
+            document.getElementById('imageModal').classList.remove('hidden');
         }
-        function cerrarVisor() {
-            document.getElementById('modalVisor').classList.add('hidden');
-            document.getElementById('imgModal').src = '';
+
+        function cerrarVisorImagen() {
+            document.getElementById('imageModal').classList.add('hidden');
+            document.getElementById('modalImageTarget').src = '';
         }
     </script>
 </body>
