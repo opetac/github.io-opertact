@@ -3,306 +3,373 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Motor de Consulta | Inteligencia</title>
+    <title>Base de Datos de Consulta Inteligente</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: #3b82f6; border-radius: 50%; width: 38px; height: 38px; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-200 font-sans antialiased">
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased">
 
-    <!-- Navegación y Buscador (Oculto en Login) -->
-    <header id="mainHeader" class="hidden bg-slate-800 border-b border-slate-700 sticky top-0 z-10 shadow-lg">
-        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
-            <h1 class="text-xl font-bold text-white cursor-pointer" onclick="navegar('inicio')">
-                <span class="text-blue-500">Consulta</span> Inteligente
-            </h1>
-            <form id="searchForm" class="flex w-full md:w-1/2 relative">
-                <input type="text" id="searchInput" placeholder="Buscar registros..." class="w-full bg-slate-700 text-white rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-r-lg font-medium transition">Buscar</button>
-            </form>
-            <div class="flex items-center gap-4">
-                <div id="statsBadge" class="hidden bg-slate-700 text-sm px-3 py-1 rounded-full text-slate-300">
-                    <span id="resultCount" class="font-bold text-blue-400">0</span> res.
-                </div>
-                <button onclick="cerrarSesion()" class="text-sm text-red-400 hover:text-red-300">Salir</button>
+    <!-- Barra de Navegación -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="irAInicio()">
+                <div class="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg">CI</div>
+                <span class="font-bold text-lg tracking-wide">Consulta<span class="text-blue-500">Inteligente</span></span>
+            </div>
+
+            <!-- Navegación según estado de sesión -->
+            <div id="navInvitado" class="flex items-center gap-3">
+                <button onclick="navegar('login')" class="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition">Iniciar Sesión</button>
+                <button onclick="navegar('registro')" class="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-md transition">Registrarse</button>
+            </div>
+
+            <div id="navUsuario" class="hidden flex items-center gap-4">
+                <span class="text-sm text-slate-400">Usuario: <strong id="lblUsuario" class="text-blue-400"></strong></span>
+                <button onclick="navegar('busqueda')" class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-md border border-slate-700 transition">Buscador</button>
+                <button onclick="cerrarSesion()" class="px-3 py-1.5 text-xs font-medium bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-800/50 rounded-md transition">Cerrar Sesión</button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-6xl mx-auto px-4 py-8 relative">
+    <!-- Contenedor Principal de Páginas -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 relative">
 
-        <!-- Pantalla de Autenticación (Login / Registro) -->
-        <section id="view-auth" class="max-w-md mx-auto mt-10">
-            <div class="bg-slate-800 p-8 rounded-xl shadow-2xl border border-slate-700">
-                <div class="text-center mb-8">
-                    <h2 class="text-3xl font-bold text-white"><span class="text-blue-500">Acceso</span> al Sistema</h2>
-                    <p class="text-slate-400 text-sm mt-2">Bases de Datos de Inteligencia</p>
+        <!-- PÁGINA 1: INICIO DE SESIÓN -->
+        <section id="page-login" class="max-w-md mx-auto my-12">
+            <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl">
+                <h2 class="text-2xl font-bold text-white text-center mb-2">Iniciar Sesión</h2>
+                <p class="text-sm text-slate-400 text-center mb-6">Ingresa tus credenciales para acceder al sistema de consulta</p>
+                
+                <form id="formLogin" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Usuario</label>
+                        <input type="text" id="logUser" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Contraseña</label>
+                        <input type="password" id="logPass" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-lg shadow-lg transition mt-2">Acceder</button>
+                </form>
+
+                <div class="mt-6 text-center border-t border-slate-800 pt-4 text-sm text-slate-400">
+                    ¿No tienes una cuenta? <a href="#" onclick="navegar('registro')" class="text-blue-400 hover:underline">Regístrate aquí</a>
                 </div>
-
-                <!-- Formulario de Login -->
-                <form id="loginForm" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-1">Usuario</label>
-                        <input type="text" id="loginUser" required class="w-full bg-slate-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-1">Contraseña</label>
-                        <input type="password" id="loginPass" required class="w-full bg-slate-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition mt-4">Iniciar Sesión</button>
-                    <p class="text-center text-sm text-slate-400 mt-4">¿No tienes cuenta? <a href="#" onclick="toggleAuth()" class="text-blue-400 hover:underline">Regístrate</a></p>
-                </form>
-
-                <!-- Formulario de Registro -->
-                <form id="registerForm" class="space-y-4 hidden">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-1">Nombre Completo</label>
-                        <input type="text" id="regNombre" required class="w-full bg-slate-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-1">Usuario</label>
-                        <input type="text" id="regUser" required class="w-full bg-slate-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-1">Contraseña</label>
-                        <input type="password" id="regPass" required class="w-full bg-slate-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg transition mt-4">Crear Cuenta</button>
-                    <p class="text-center text-sm text-slate-400 mt-4">¿Ya tienes cuenta? <a href="#" onclick="toggleAuth()" class="text-blue-400 hover:underline">Inicia Sesión</a></p>
-                </form>
             </div>
         </section>
-        
-        <!-- Pantalla de Inicio (Búsqueda) -->
-        <section id="view-inicio" class="hidden text-center py-20">
-            <h2 class="text-3xl font-semibold text-white mb-4">Bienvenido, <span id="nombreUsuarioUI" class="text-blue-400">Usuario</span></h2>
-            <p class="text-slate-400 max-w-xl mx-auto">Ingresa tu consulta en el buscador superior. El sistema escaneará simultáneamente todas las bases de datos disponibles.</p>
-        </section>
 
-        <!-- Pantalla de Carga -->
-        <section id="view-cargando" class="hidden flex flex-col items-center justify-center py-20">
-            <div class="loader mb-4"></div>
-            <p id="loadingMsg" class="text-slate-400 animate-pulse">Procesando solicitud...</p>
-        </section>
+        <!-- PÁGINA 2: REGISTRO -->
+        <section id="page-registro" class="hidden max-w-md mx-auto my-12">
+            <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl">
+                <h2 class="text-2xl font-bold text-white text-center mb-2">Crear Cuenta</h2>
+                <p class="text-sm text-slate-400 text-center mb-6">Tus datos se guardarán en la base de datos centralizada</p>
 
-        <!-- Pantalla de Resultados -->
-        <section id="view-resultados" class="hidden">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-xl font-semibold text-white">Resultados</h3>
-                <button onclick="navegar('inicio')" class="text-blue-400 hover:text-blue-300 text-sm font-medium">&larr; Limpiar</button>
+                <form id="formRegistro" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Nombre Completo</label>
+                        <input type="text" id="regNombre" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Usuario</label>
+                        <input type="text" id="regUser" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Contraseña</label>
+                        <input type="password" id="regPass" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-lg shadow-lg transition mt-2">Guardar Registro</button>
+                </form>
+
+                <div class="mt-6 text-center border-t border-slate-800 pt-4 text-sm text-slate-400">
+                    ¿Ya posees una cuenta? <a href="#" onclick="navegar('login')" class="text-blue-400 hover:underline">Inicia sesión</a>
+                </div>
             </div>
-            <div id="gridResultados" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </section>
 
-        <!-- Pantalla de Detalles -->
-        <section id="view-detalles" class="hidden">
-            <button onclick="navegar('resultados')" class="mb-6 inline-flex items-center text-blue-400 hover:text-blue-300 font-medium transition">
-                &larr; Volver
-            </button>
-            <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl" id="contenedorDetalles"></div>
+        <!-- PÁGINA 3: BUSCADOR E INTELIGENCIA -->
+        <section id="page-busqueda" class="hidden space-y-6">
+            <!-- Barra superior de búsqueda y métricas -->
+            <div class="bg-slate-900 border border-slate-800 p-4 md:p-6 rounded-2xl shadow-xl flex flex-col md:flex-row gap-4 items-center justify-between">
+                <form id="formSearch" class="w-full md:w-2/3 flex gap-2">
+                    <input type="text" id="txtQuery" placeholder="Escribe un nombre, número, código, folio o parámetro..." required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-6 py-3 rounded-xl shadow-lg transition flex items-center gap-2">
+                        🔍 <span>Buscar</span>
+                    </button>
+                </form>
+
+                <div id="statsBox" class="hidden flex items-center gap-4 bg-slate-950 border border-slate-800 px-4 py-2.5 rounded-xl text-xs text-slate-400">
+                    <div>Encontrados: <strong id="cntEncontrados" class="text-blue-400 text-sm">0</strong></div>
+                    <div class="h-4 w-px bg-slate-800"></div>
+                    <div>Escrutados: <strong id="cntEscaneados" class="text-slate-200 text-sm">0</strong></div>
+                </div>
+            </div>
+
+            <!-- Grilla de Resultados -->
+            <div id="containerResultados" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div class="col-span-full py-16 text-center text-slate-500">
+                    Introduce un término de búsqueda para consultar en las 9 bases de datos.
+                </div>
+            </div>
+        </section>
+
+        <!-- PÁGINA 4: DETALLE DE REGISTRO -->
+        <section id="page-detalle" class="hidden space-y-4">
+            <div class="flex items-center justify-between">
+                <button onclick="navegar('busqueda')" class="px-4 py-2 text-sm bg-slate-900 hover:bg-slate-800 border border-slate-800 text-blue-400 rounded-lg transition">
+                    &larr; Volver a resultados
+                </button>
+                <span id="lblBaseOrigen" class="text-xs bg-slate-900 border border-slate-800 text-slate-400 px-3 py-1 rounded-full"></span>
+            </div>
+
+            <div id="contenidoDetalle" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl"></div>
+        </section>
+
+        <!-- PÁGINA DE CARGA GLOBAL -->
+        <section id="page-loading" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 flex flex-col items-center justify-center">
+            <div class="spinner mb-4"></div>
+            <p id="lblLoading" class="text-sm font-medium text-slate-300">Procesando solicitud...</p>
         </section>
 
     </main>
 
-    <!-- Visor de Imagen -->
-    <div id="modalImagen" class="hidden fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
-        <button onclick="cerrarVisor()" class="absolute top-6 right-6 text-white text-3xl font-bold hover:text-red-500">&times;</button>
-        <img id="imagenVisor" src="" class="max-w-full max-h-full rounded-lg shadow-2xl">
+    <!-- VISOR MODAL DE IMÁGENES -->
+    <div id="modalVisor" class="hidden fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4">
+        <button onclick="cerrarVisor()" class="absolute top-5 right-5 text-slate-400 hover:text-white text-3xl font-bold bg-slate-900/80 w-12 h-12 rounded-full border border-slate-700 flex items-center justify-center transition">&times;</button>
+        <img id="imgModal" src="" class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl border border-slate-800">
     </div>
 
     <script>
-        // CONFIGURACIÓN: Inserta tu URL publicada de Apps Script aquí
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzhp3zP6gcJ4rMeJWnXODXpP7U4oF-xh12j3Yxz5kTuPNP71qEGV-rSJy07XFuEpl1IiA/exec'; 
-        
-        let datosGlobales = [];
+        // CONFIGURACIÓN CENTRAL: PEGA AQUÍ LA URL DE TU APPS SCRIPT PUBLICADO
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzlm8eX_OI3eNXqXqKLnmDWTqGIU3jUvmNu_fDTnZ-lzWx0_8nXthDN0QvwcfRCEoUZRA/exec';
 
-        // Inicialización de la App
-        window.onload = () => {
-            const user = localStorage.getItem('appUser');
-            if(user) {
-                document.getElementById('nombreUsuarioUI').innerText = localStorage.getItem('appName');
-                navegar('inicio');
-                document.getElementById('mainHeader').classList.remove('hidden');
+        let resultadosGlobales = [];
+
+        // Inicializador de Vista
+        window.addEventListener('DOMContentLoaded', () => {
+            const sesion = localStorage.getItem('ci_user');
+            if (sesion) {
+                establecerSesionUI(sesion);
+                navegar('busqueda');
             } else {
-                navegar('auth');
+                navegar('login');
             }
-        };
+        });
 
         function navegar(vista) {
-            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
-            document.getElementById(`view-${vista}`).classList.remove('hidden');
-            
-            if(vista === 'auth') document.getElementById('mainHeader').classList.add('hidden');
-            if(vista === 'inicio') {
-                document.getElementById('searchInput').value = '';
-                document.getElementById('statsBadge').classList.add('hidden');
+            ['login', 'registro', 'busqueda', 'detalle'].forEach(v => {
+                document.getElementById(`page-${v}`).classList.add('hidden');
+            });
+            document.getElementById(`page-${vista}`).classList.remove('hidden');
+        }
+
+        function irAInicio() {
+            if (localStorage.getItem('ci_user')) {
+                navegar('busqueda');
+            } else {
+                navegar('login');
             }
         }
 
-        function toggleAuth() {
-            document.getElementById('loginForm').classList.toggle('hidden');
-            document.getElementById('registerForm').classList.toggle('hidden');
+        function establecerSesionUI(nombre) {
+            document.getElementById('lblUsuario').innerText = nombre;
+            document.getElementById('navInvitado').classList.add('hidden');
+            document.getElementById('navUsuario').classList.remove('hidden');
         }
 
         function cerrarSesion() {
-            localStorage.clear();
-            navegar('auth');
+            localStorage.removeItem('ci_user');
+            document.getElementById('navInvitado').classList.remove('hidden');
+            document.getElementById('navUsuario').classList.add('hidden');
+            navegar('login');
         }
 
-        // Petición genérica al backend
-        async function fetchBackend(payload, loadingText) {
-            navegar('cargando');
-            document.getElementById('loadingMsg').innerText = loadingText;
-            
+        function mostrarCarga(mensaje) {
+            document.getElementById('lblLoading').innerText = mensaje || "Cargando...";
+            document.getElementById('page-loading').classList.remove('hidden');
+        }
+
+        function ocultarCarga() {
+            document.getElementById('page-loading').classList.add('hidden');
+        }
+
+        // PETICIÓN HTTP POST (Soporta CORS enviando text/plain)
+        async function ejecutarPeticion(payload) {
             try {
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    // Importante: text/plain evita el bloqueo preflight de CORS
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(payload)
                 });
                 return await response.json();
-            } catch (error) {
-                alert('Error de conexión con el servidor.');
-                navegar(localStorage.getItem('appUser') ? 'inicio' : 'auth');
-                return null;
+            } catch (err) {
+                alert("Error de conexión con el servidor. Revisa tu URL de despliegue y los permisos.");
+                return { exito: false };
             }
         }
 
-        // --- AUTH LOGIC ---
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        // LOGIN
+        document.getElementById('formLogin').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const u = document.getElementById('loginUser').value;
-            const p = document.getElementById('loginPass').value;
+            mostrarCarga("Validando credenciales...");
             
-            const res = await fetchBackend({ action: 'login', usuario: u, password: p }, 'Verificando credenciales...');
-            if(res && res.exito) {
-                localStorage.setItem('appUser', u);
-                localStorage.setItem('appName', res.nombre);
-                document.getElementById('nombreUsuarioUI').innerText = res.nombre;
-                document.getElementById('mainHeader').classList.remove('hidden');
-                navegar('inicio');
-            } else if(res) {
-                alert(res.mensaje);
-                navegar('auth');
+            const u = document.getElementById('logUser').value;
+            const p = document.getElementById('logPass').value;
+
+            const res = await ejecutarPeticion({ action: 'login', usuario: u, password: p });
+            ocultarCarga();
+
+            if (res.exito) {
+                localStorage.setItem('ci_user', res.nombre);
+                establecerSesionUI(res.nombre);
+                navegar('busqueda');
+            } else {
+                alert(res.mensaje || "Error al iniciar sesión.");
             }
         });
 
-        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        // REGISTRO
+        document.getElementById('formRegistro').addEventListener('submit', async (e) => {
             e.preventDefault();
+            mostrarCarga("Registrando cuenta...");
+
             const n = document.getElementById('regNombre').value;
             const u = document.getElementById('regUser').value;
             const p = document.getElementById('regPass').value;
-            
-            const res = await fetchBackend({ action: 'register', nombre: n, usuario: u, password: p }, 'Registrando usuario...');
-            if(res && res.exito) {
-                alert('Registro exitoso. Ahora puedes iniciar sesión.');
-                toggleAuth();
-                navegar('auth');
-            } else if(res) {
-                alert(res.mensaje);
-                navegar('auth');
+
+            const res = await ejecutarPeticion({ action: 'register', nombre: n, usuario: u, password: p });
+            ocultarCarga();
+
+            if (res.exito) {
+                alert("Registro completado con éxito. Ahora puedes iniciar sesión.");
+                document.getElementById('formRegistro').reset();
+                navegar('login');
+            } else {
+                alert(res.mensaje || "Error en el registro.");
             }
         });
 
-        // --- SEARCH LOGIC ---
-        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+        // BÚSQUEDA
+        document.getElementById('formSearch').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const query = document.getElementById('searchInput').value.trim();
-            if(!query) return;
+            const q = document.getElementById('txtQuery').value.trim();
+            if(!q) return;
 
-            const res = await fetchBackend({ action: 'search', query: query }, 'Analizando bases de datos...');
-            if(res && res.exito) {
-                datosGlobales = res.datos;
-                document.getElementById('resultCount').innerText = res.total_encontrados;
-                document.getElementById('statsBadge').classList.remove('hidden');
+            mostrarCarga("Consultando en las 9 bases de datos...");
+            const res = await ejecutarPeticion({ action: 'search', query: q });
+            ocultarCarga();
+
+            if (res.exito) {
+                resultadosGlobales = res.datos;
+                document.getElementById('cntEncontrados').innerText = res.total_encontrados;
+                document.getElementById('cntEscaneados').innerText = res.total_escaneados;
+                document.getElementById('statsBox').classList.remove('hidden');
                 renderizarResultados();
             }
         });
 
-        // Parsear URLs a imágenes
-        function procesarImagenURL(url) {
-            const stringUrl = String(url);
-            if(stringUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i)) return stringUrl;
-            const driveMatch = stringUrl.match(/\/d\/(.+?)\//) || stringUrl.match(/id=(.+?)(&|$)/);
-            if(driveMatch) return `https://drive.google.com/uc?export=view&id=${driveMatch[1]}`;
+        // Convertir URLs de Drive o enlaces directos a miniaturas compatibles
+        function extraerUrlImagen(valor) {
+            const str = String(valor).trim();
+            if (str.match(/\.(jpeg|jpg|png|gif|webp)$/i)) return str;
+            
+            const driveIdMatch = str.match(/\/d\/([a-zA-Z0-9_-]+)/) || str.match(/id=([a-zA-Z0-9_-]+)/);
+            if (driveIdMatch && driveIdMatch[1]) {
+                return `https://drive.google.com/thumbnail?id=${driveIdMatch[1]}&sz=w1000`;
+            }
             return null;
         }
 
-        // --- RENDER LOGIC ---
+        // MOSTRAR TARJETAS EN GRID
         function renderizarResultados() {
-            const grid = document.getElementById('gridResultados');
+            const grid = document.getElementById('containerResultados');
             grid.innerHTML = '';
-            
-            if(datosGlobales.length === 0) {
-                grid.innerHTML = `<div class="col-span-full py-10 text-center text-slate-400">No se encontraron coincidencias.</div>`;
-            } else {
-                datosGlobales.forEach((registro, index) => {
-                    const card = document.createElement('div');
-                    card.className = "bg-slate-800 border border-slate-700 rounded-lg p-5 hover:border-blue-500 cursor-pointer transition flex flex-col";
-                    
-                    let resumenHtml = '';
-                    let keys = Object.keys(registro).filter(k => registro[k] !== "");
-                    
-                    keys.slice(0, 4).forEach(k => {
-                        let val = registro[k];
-                        let imgUrl = procesarImagenURL(val);
-                        if(imgUrl && !resumenHtml.includes('<img')) {
-                            resumenHtml = `<img src="${imgUrl}" class="w-full h-40 object-cover rounded mb-3 border border-slate-600" onerror="this.style.display='none'">${resumenHtml}`;
-                        } else if (!String(val).includes('http')) {
-                            resumenHtml += `<div class="mb-1"><span class="text-xs text-slate-500 uppercase">${k}</span><p class="text-sm text-slate-200 truncate">${val}</p></div>`;
-                        }
-                    });
 
-                    card.innerHTML = resumenHtml;
-                    card.onclick = () => verDetalle(index);
-                    grid.appendChild(card);
-                });
+            if (resultadosGlobales.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-16 text-center text-slate-500">No se hallaron coincidencias en ninguna base de datos.</div>`;
+                return;
             }
-            navegar('resultados');
+
+            resultadosGlobales.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 border border-slate-800 hover:border-blue-500/50 rounded-xl p-5 cursor-pointer transition flex flex-col justify-between shadow-md hover:shadow-xl";
+
+                let fotoHtml = '';
+                let datosHtml = '';
+                let contadorCampos = 0;
+
+                Object.keys(item).forEach(key => {
+                    if (key === '_base_origen' || !item[key]) return;
+                    const val = item[key];
+                    const imgUrl = extraerUrlImagen(val);
+
+                    if (imgUrl && !fotoHtml) {
+                        fotoHtml = `<img src="${imgUrl}" class="w-full h-44 object-cover rounded-lg mb-3 border border-slate-800" onerror="this.style.display='none'">`;
+                    } else if (!String(val).startsWith('http') && contadorCampos < 4) {
+                        datosHtml += `<div class="mb-2"><span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider block">${key}</span><p class="text-sm text-slate-200 truncate">${val}</p></div>`;
+                        contadorCampos++;
+                    }
+                });
+
+                card.innerHTML = `
+                    <div>
+                        ${fotoHtml}
+                        ${datosHtml}
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-500">
+                        <span>${item._base_origen || 'Hoja'}</span>
+                        <span class="text-blue-400 font-medium">Ver detalle &rarr;</span>
+                    </div>
+                `;
+
+                card.onclick = () => abrirDetalle(index);
+                grid.appendChild(card);
+            });
         }
 
-        function verDetalle(index) {
-            const registro = datosGlobales[index];
-            const contenedor = document.getElementById('contenedorDetalles');
-            contenedor.innerHTML = '';
+        // VER DETALLE COMPLETO
+        function abrirDetalle(index) {
+            const reg = resultadosGlobales[index];
+            const contenedor = document.getElementById('contenidoDetalle');
+            document.getElementById('lblBaseOrigen').innerText = reg._base_origen || 'Registro';
+            
+            let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">`;
 
-            let contenido = `<div class="grid grid-cols-1 md:grid-cols-2 gap-6">`;
-            Object.keys(registro).forEach(key => {
-                if(!registro[key]) return;
-                
-                const valor = registro[key];
-                const imgUrl = procesarImagenURL(valor);
+            Object.keys(reg).forEach(key => {
+                if (key === '_base_origen' || !reg[key]) return;
+                const val = reg[key];
+                const imgUrl = extraerUrlImagen(val);
 
-                contenido += `<div class="bg-slate-900 p-3 rounded-md border border-slate-700 break-words">
-                    <span class="block text-xs text-blue-400 uppercase font-semibold mb-1">${key}</span>`;
-                
-                if(imgUrl) {
-                    contenido += `<img src="${imgUrl}" class="mt-2 h-32 rounded cursor-pointer hover:opacity-80 border border-slate-600" onclick="abrirVisor('${imgUrl}')">`;
-                } else if(String(valor).startsWith('http')) {
-                    contenido += `<a href="${valor}" target="_blank" class="text-blue-500 hover:underline text-sm">${valor}</a>`;
+                html += `<div class="bg-slate-950 border border-slate-800 p-4 rounded-xl flex flex-col justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-blue-400 uppercase tracking-wider block mb-1">${key}</span>`;
+
+                if (imgUrl) {
+                    html += `<img src="${imgUrl}" class="mt-2 h-40 w-full object-cover rounded-lg cursor-pointer hover:opacity-90 border border-slate-800 transition" onclick="abrirVisor('${imgUrl}')">`;
+                } else if (String(val).startsWith('http')) {
+                    html += `<a href="${val}" target="_blank" class="text-sm text-blue-400 hover:underline break-all">${val}</a>`;
                 } else {
-                    contenido += `<p class="text-white text-sm whitespace-pre-wrap">${valor}</p>`;
+                    html += `<p class="text-sm text-slate-200 whitespace-pre-wrap">${val}</p>`;
                 }
-                contenido += `</div>`;
+
+                html += `</div></div>`;
             });
 
-            contenedor.innerHTML = contenido + `</div>`;
-            navegar('detalles');
+            html += `</div>`;
+            contenedor.innerHTML = html;
+            navegar('detalle');
         }
 
-        // Visor de Imágenes
+        // VISOR MODAL DE IMÁGENES
         function abrirVisor(src) {
-            document.getElementById('imagenVisor').src = src;
-            document.getElementById('modalImagen').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
+            document.getElementById('imgModal').src = src;
+            document.getElementById('modalVisor').classList.remove('hidden');
         }
         function cerrarVisor() {
-            document.getElementById('modalImagen').classList.add('hidden');
-            document.getElementById('imagenVisor').src = '';
-            document.body.style.overflow = 'auto';
+            document.getElementById('modalVisor').classList.add('hidden');
+            document.getElementById('imgModal').src = '';
         }
     </script>
 </body>
