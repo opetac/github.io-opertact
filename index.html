@@ -3,38 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Base de Datos Inteligente | Consulta Multibase</title>
+    <title>Base de Datos Inteligente & Visor de Abordamientos</title>
+    
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PapaParse CDN para lectura ultrarrápida de CSV -->
+    <!-- PapaParse CDN para análisis rápido de CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- Leaflet.js para el Mapa Interactivo -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <style>
-        .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 0.8s linear infinite; }
+        .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid #3b82f6; border-radius: 50%; width: 42px; height: 42px; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        #mapDetail { height: 280px; width: 100%; border-radius: 0.75rem; z-index: 10; }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-blue-600 selection:text-white">
 
-    <!-- BARRA SUPERIOR DE NAVEGACIÓN GLOBAL -->
+    <!-- CABECERA PRINCIPAL Y NAVEGACIÓN -->
     <header id="appHeader" class="hidden bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-30 shadow-xl">
         <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
             
             <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
                 <button onclick="navegarA('home')" class="text-lg font-black tracking-wider text-white hover:text-blue-400 transition flex items-center gap-2">
                     <span class="bg-blue-600 text-white text-xs px-2 py-1 rounded-md font-extrabold">BD</span>
-                    INTELIGENTE
+                    INTEGRADA
                 </button>
-                <button id="btnVolver" onclick="volverAtras()" class="hidden text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
+                <button id="btnVolver" onclick="volverAtras()" class="hidden text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1 font-semibold">
                     &larr; Regresar
                 </button>
             </div>
 
-            <!-- BUSCADOR INTELIGENTE EN EL HEADER -->
+            <!-- BUSCADOR MULTI-BASE -->
             <form id="searchForm" class="flex w-full sm:w-1/2">
-                <input type="text" id="searchInput" placeholder="Buscar por nombre, folio, placa, CURP o palabra clave..." class="w-full bg-slate-900 text-white rounded-l-xl px-4 py-2 text-sm border border-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <input type="text" id="searchInput" placeholder="Buscar por nombre, alias, folio, vehículo, CURP, ubicación..." class="w-full bg-slate-950 text-white rounded-l-xl px-4 py-2 text-sm border border-slate-700 focus:outline-none focus:border-blue-500">
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 text-sm font-semibold rounded-r-xl transition flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     Buscar
@@ -48,15 +54,15 @@
         </div>
     </header>
 
-    <!-- CONTENEDOR PRINCIPAL DE VISTAS -->
+    <!-- CONTENEDOR VISTAS DUALES Y DINÁMICAS -->
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
 
         <!-- VISTA 1: INICIO DE SESIÓN -->
         <section id="view-login" class="max-w-md mx-auto my-12">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
                 <div class="absolute -right-10 -top-10 w-32 h-32 bg-blue-600/10 rounded-full blur-2xl"></div>
-                <h2 class="text-2xl font-black text-center text-white mb-1">Iniciar Sesión</h2>
-                <p class="text-slate-400 text-xs text-center mb-6">Acceso seguro a la Base de Datos Consulta Inteligente</p>
+                <h2 class="text-2xl font-black text-center text-white mb-1">Acceso al Sistema</h2>
+                <p class="text-slate-400 text-xs text-center mb-6">Consulta Inteligente e Histórico de Abordamientos</p>
 
                 <form id="loginForm" class="space-y-4">
                     <div>
@@ -67,11 +73,11 @@
                         <label class="block text-xs font-semibold text-slate-300 mb-1">Contraseña</label>
                         <input type="password" id="loginPass" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
                     </div>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-blue-600/20">Ingresar al Sistema</button>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-blue-600/20">Entrar al Sistema</button>
                 </form>
 
                 <div class="mt-6 text-center text-xs text-slate-400 border-t border-slate-800/80 pt-4">
-                    ¿No tienes un usuario registrado? <button onclick="navegarA('register')" class="text-blue-400 font-semibold hover:underline">Registrarse aquí</button>
+                    ¿No tienes un usuario? <button onclick="navegarA('register')" class="text-blue-400 font-semibold hover:underline">Registrarse aquí</button>
                 </div>
             </div>
         </section>
@@ -79,112 +85,131 @@
         <!-- VISTA 2: REGISTRO DE USUARIO -->
         <section id="view-register" class="hidden max-w-md mx-auto my-12">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
-                <h2 class="text-2xl font-black text-center text-white mb-1">Crear Cuenta</h2>
-                <p class="text-slate-400 text-xs text-center mb-6">Registro de nuevo operador en el sistema</p>
+                <h2 class="text-2xl font-black text-center text-white mb-1">Nuevo Registro</h2>
+                <p class="text-slate-400 text-xs text-center mb-6">Campos organizados: Fecha, Nombre, Usuario y Password</p>
 
                 <form id="registerForm" class="space-y-4">
                     <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Fecha</label>
+                        <input type="date" id="regFecha" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-slate-200">
+                    </div>
+                    <div>
                         <label class="block text-xs font-semibold text-slate-300 mb-1">Nombre Completo</label>
-                        <input type="text" id="regNombre" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                        <input type="text" id="regNombre" placeholder="Ej. Juan Pérez" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-300 mb-1">Usuario</label>
-                        <input type="text" id="regUser" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                        <input type="text" id="regUser" placeholder="Ej. jperez" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-300 mb-1">Contraseña</label>
                         <input type="password" id="regPass" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
                     </div>
-                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-emerald-600/20">Completar Registro</button>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-emerald-600/20">Guardar Registro</button>
                 </form>
 
                 <div class="mt-6 text-center text-xs text-slate-400 border-t border-slate-800/80 pt-4">
-                    ¿Ya posees una cuenta? <button onclick="navegarA('login')" class="text-blue-400 font-semibold hover:underline">Volver a inicio de sesión</button>
+                    ¿Ya estás registrado? <button onclick="navegarA('login')" class="text-blue-400 font-semibold hover:underline">Iniciar Sesión</button>
                 </div>
             </div>
         </section>
 
         <!-- VISTA 3: INICIO DE BIENVENIDA -->
-        <section id="view-home" class="hidden text-center py-16">
+        <section id="view-home" class="hidden text-center py-12">
             <div class="max-w-3xl mx-auto space-y-6">
                 <span class="bg-blue-900/40 text-blue-400 border border-blue-800 text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-widest">
-                    Sistema Activo de Consulta Inteligente
+                    Panel Consolidado Inteligente
                 </span>
                 <h2 class="text-3xl sm:text-5xl font-black text-white leading-tight">
-                    Búsqueda Consolidada de Información
+                    Consulta de Registros, Abordamientos y Fichas
                 </h2>
                 <p class="text-slate-400 text-sm sm:text-base leading-relaxed">
-                    Ingresa un dato de búsqueda en la barra superior. El sistema escaneará dinámicamente las 9 bases de datos enlazadas, estructurando la información con galerías fotográficas en la parte superior y orden lógico de atributos.
+                    Escribe cualquier dato de interés en el buscador superior. El motor escaneará las 9 matrices activas y organizará la ficha técnica mostrando fotografías al frente, mapa de geolocalización y síntesis de entrevista.
                 </p>
 
-                <!-- Estado del Servidor/Hojas -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6">
+                <!-- ESTADÍSTICAS DEL SISTEMA -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4">
                     <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
                         <span class="block text-2xl font-black text-blue-500">9</span>
-                        <span class="text-[11px] text-slate-400 font-medium">Bases de Datos</span>
+                        <span class="text-[11px] text-slate-400 font-medium">Bases Indexadas</span>
                     </div>
                     <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
                         <span id="statTotalRegistros" class="block text-2xl font-black text-emerald-500">--</span>
-                        <span class="text-[11px] text-slate-400 font-medium">Registros Escaneables</span>
+                        <span class="text-[11px] text-slate-400 font-medium">Total Registros</span>
                     </div>
                     <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
-                        <span class="block text-2xl font-black text-purple-500">100%</span>
-                        <span class="text-[11px] text-slate-400 font-medium">Cliente Ligero</span>
+                        <span class="block text-2xl font-black text-purple-500">GPS</span>
+                        <span class="text-[11px] text-slate-400 font-medium">Mapa Interactivo</span>
                     </div>
                     <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
-                        <span class="block text-2xl font-black text-amber-500">Visor</span>
-                        <span class="text-[11px] text-slate-400 font-medium">Fotos HD</span>
+                        <span class="block text-2xl font-black text-amber-500">Entrevistas</span>
+                        <span class="text-[11px] text-slate-400 font-medium">Síntesis Integrada</span>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- VISTA 4: CARGANDO -->
+        <!-- VISTA 4: PANTALLA DE CARGA -->
         <section id="view-loading" class="hidden flex flex-col items-center justify-center py-24">
             <div class="spinner mb-4"></div>
-            <p id="loadingText" class="text-slate-400 text-sm animate-pulse font-medium">Procesando y organizando información...</p>
+            <p id="loadingText" class="text-slate-400 text-sm animate-pulse font-medium">Consultando matrices de información...</p>
         </section>
 
         <!-- VISTA 5: RESULTADOS DE BÚSQUEDA -->
         <section id="view-results" class="hidden space-y-6">
-            <!-- Resumen Inteligente de la Búsqueda -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
                 <div>
-                    <h3 class="text-lg font-bold text-white">Resultados Encontrados</h3>
-                    <p class="text-xs text-slate-400">Total escrutado: <span id="lblTotalEscaneados" class="font-bold text-slate-200">0</span> registros en las 9 bases de datos</p>
+                    <h3 class="text-lg font-bold text-white">Resultados de Búsqueda</h3>
+                    <p class="text-xs text-slate-400">Escrutinio sobre <span id="lblTotalEscaneados" class="font-bold text-slate-200">0</span> registros totales</p>
                 </div>
                 <div class="flex items-center gap-3">
                     <span class="bg-emerald-950 border border-emerald-800 text-emerald-400 text-xs font-bold px-4 py-2 rounded-xl">
-                        <span id="lblTotalEncontrados" class="text-sm font-black">0</span> coincidencias halladas
+                        <span id="lblTotalEncontrados" class="text-sm font-black">0</span> coincidencias
                     </span>
-                    <button onclick="navegarA('home')" class="text-xs text-slate-400 hover:text-white underline">Nueva búsqueda</button>
                 </div>
             </div>
 
-            <!-- Malla de Tarjetas de Resultados -->
+            <!-- TARJETAS DE RESULTADOS -->
             <div id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </section>
 
-        <!-- VISTA 6: DETALLE EXTENDIDO DE REGISTRO -->
+        <!-- VISTA 6: FICHA DETALLADA (FOTOGRAFÍAS ARRIBA + MAPA + ENTREVISTA) -->
         <section id="view-detail" class="hidden max-w-4xl mx-auto space-y-6">
             <div class="flex justify-between items-center border-b border-slate-800 pb-4">
                 <h3 class="text-xl font-black text-white flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-                    Ficha Técnica de Información
+                    <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                    Ficha Razonada de Información
                 </h3>
-                <button onclick="volverAtras()" class="text-xs text-blue-400 hover:underline font-semibold">&larr; Regresar a la lista</button>
+                <button onclick="volverAtras()" class="text-xs text-blue-400 hover:underline font-semibold">&larr; Regresar a lista</button>
             </div>
 
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6">
-                <!-- SECCIÓN SUPERIOR: GALERÍA DE FOTOGRAFÍAS -->
+                
+                <!-- 1. FOTOGRAFÍAS EN LA PARTE SUPERIOR -->
                 <div id="detailPhotosSection" class="hidden border-b border-slate-800 pb-6">
-                    <h4 class="text-xs font-extrabold uppercase text-slate-400 tracking-wider mb-3">Fotografías e Imágenes Adjuntas</h4>
+                    <h4 class="text-xs font-extrabold uppercase text-slate-400 tracking-wider mb-3">Fotografías / Evidencia Visual</h4>
                     <div id="detailPhotosGrid" class="flex flex-wrap gap-4"></div>
                 </div>
 
-                <!-- SECCIÓN INFERIOR: INFORMACIÓN ORGANIZADA -->
+                <!-- 2. UBICACIÓN Y MAPA DE ABORDAMIENTO / DETENCIÓN -->
+                <div id="detailMapSection" class="hidden border-b border-slate-800 pb-6">
+                    <h4 class="text-xs font-extrabold uppercase text-blue-400 tracking-wider mb-2 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        Lugar de Abordamiento o Detención
+                    </h4>
+                    <p id="detailMapAddress" class="text-xs text-slate-300 mb-3 font-medium"></p>
+                    <div id="mapDetail"></div>
+                </div>
+
+                <!-- 3. ENTREVISTA E INFORMACIÓN COMPLEMENTARIA -->
+                <div id="detailInterviewSection" class="hidden bg-slate-950 border border-slate-800 p-4 rounded-xl">
+                    <h4 class="text-xs font-extrabold uppercase text-amber-400 tracking-wider mb-2">Entrevista e Información Complementaria</h4>
+                    <div id="detailInterviewContent" class="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap font-medium"></div>
+                </div>
+
+                <!-- 4. TODOS LOS DATOS ORGANIZADOS EN MANGAS STRUCTURADAS -->
                 <div>
-                    <h4 class="text-xs font-extrabold uppercase text-slate-400 tracking-wider mb-3">Atributos y Datos Razonados</h4>
+                    <h4 class="text-xs font-extrabold uppercase text-slate-400 tracking-wider mb-3">Datos Generales del Registro</h4>
                     <div id="detailFieldsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
                 </div>
             </div>
@@ -192,15 +217,15 @@
 
     </main>
 
-    <!-- MODAL DE VISOR DE IMAGEN AMPLIDA -->
+    <!-- VISOR MODAL DE IMÁGENES -->
     <div id="imageModal" class="hidden fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
         <button onclick="cerrarVisorImagen()" class="absolute top-5 right-5 text-white/80 hover:text-white text-4xl font-bold transition">&times;</button>
         <img id="modalImageTarget" src="" class="max-w-full max-h-[90vh] rounded-xl shadow-2xl object-contain border border-slate-800">
     </div>
 
-    <!-- SCRIPT PRINCIPAL DE LÓGICA DE NEGOCIO -->
+    <!-- LÓGICA DE FUNCIONAMIENTO -->
     <script>
-        // CONFIGURACIÓN DE ENLACES DE GOOGLE SHEETS
+        // CONFIGURACIÓN DE HOJAS DE GOOGLE SHEETS
         const USERS_SHEET_ID = '1vYqMxZbNIsTx5Kud_9bFiiI-OYme08ZlJFCzLVKXsiI';
         
         const DATA_SHEET_IDS = [
@@ -215,15 +240,18 @@
             '18yIgXP0KHrAOtPcGP0kOGGyijfaD-dTC'
         ];
 
-        // VARIABLES DE ESTADO Y ARCHIVO DE NAVEGACIÓN
+        // ESTADO GLOBAL Y NAVEGACIÓN
         let historialNavegacion = [];
         let vistaActual = 'login';
         let datosResultados = [];
-        let cacheBasesDeDatos = null;
         let usuariosRegistradosRemoto = [];
+        let mapInstance = null;
+        let mapMarker = null;
 
-        // INICIALIZACIÓN
         window.onload = async () => {
+            // Establecer fecha de hoy por defecto en formulario de registro
+            document.getElementById('regFecha').value = new Date().toISOString().split('T')[0];
+
             const userLogged = localStorage.getItem('appUser');
             if (userLogged) {
                 document.getElementById('userNameDisplay').innerText = localStorage.getItem('appName') || userLogged;
@@ -232,16 +260,14 @@
             } else {
                 navegarA('login', true);
             }
-            // Cargar usuarios en segundo plano desde el Google Sheet especificado
             cargarUsuariosRemotos();
         };
 
-        // ENLACE A CSV PÚBLICO DE GOOGLE SHEETS
         function getCsvUrl(sheetId) {
             return `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
         }
 
-        // CONTROLADOR DE NAVEGACIÓN Y VISTAS (SPA)
+        // CONTROL DE VISTAS CON PILA DE HISTORIAL (AVANZAR / REGRESAR)
         function navegarA(vista, resetHistorial = false) {
             if (resetHistorial) {
                 historialNavegacion = [];
@@ -280,7 +306,7 @@
             navegarA('login', true);
         }
 
-        // CARGAR Y VALIDAR USUARIOS DESDE GOOGLE SHEETS
+        // CARGAR USUARIOS
         async function cargarUsuariosRemotos() {
             try {
                 const response = await fetch(getCsvUrl(USERS_SHEET_ID));
@@ -289,77 +315,65 @@
                     header: true,
                     skipEmptyLines: true,
                     complete: (results) => {
-                        usuariosRegistradosRemoto = results.data;
+                        usuariosRegistradosRemoto = results.data || [];
                     }
                 });
             } catch (err) {
-                console.warn("No se pudo cargar la hoja remota de usuarios. Se usarán registros locales.");
+                console.warn("Cargando repositorio local de usuarios.");
             }
         }
 
-        // AUTENTICACIÓN: LOGIN Y REGISTRO
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        // AUTENTICACIÓN
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const u = document.getElementById('loginUser').value.trim().toLowerCase();
             const p = document.getElementById('loginPass').value.trim();
 
-            navegarA('loading');
-            document.getElementById('loadingText').innerText = "Verificando usuario...";
-
-            // Buscar primero en los usuarios remotos cargados del Sheet
-            let usuarioEncontrado = usuariosRegistradosRemoto.find(row => {
-                const userKey = Object.keys(row).find(k => k.toLowerCase().includes('usuario') || k.toLowerCase().includes('user'));
-                const passKey = Object.keys(row).find(k => k.toLowerCase().includes('password') || k.toLowerCase().includes('contrase'));
-                return userKey && passKey && String(row[userKey]).trim().toLowerCase() === u && String(row[passKey]).trim() === p;
+            let encontrado = usuariosRegistradosRemoto.find(row => {
+                const uKey = Object.keys(row).find(k => k.toLowerCase().includes('usuario') || k.toLowerCase().includes('user'));
+                const pKey = Object.keys(row).find(k => k.toLowerCase().includes('password') || k.toLowerCase().includes('contrase'));
+                return uKey && pKey && String(row[uKey]).trim().toLowerCase() === u && String(row[pKey]).trim() === p;
             });
 
-            // Si no se encuentra en el sheet, verificar en LocalStorage (para nuevos registros sin backend)
-            if (!usuarioEncontrado) {
-                const usuariosLocales = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-                usuarioEncontrado = usuariosLocales.find(user => user.usuario.toLowerCase() === u && user.password === p);
+            if (!encontrado) {
+                const locs = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+                encontrado = locs.find(x => x.usuario.toLowerCase() === u && x.password === p);
             }
 
-            if (usuarioEncontrado) {
-                const nombre = usuarioEncontrado.Nombre || usuarioEncontrado.nombre || u;
+            if (encontrado) {
+                const nombre = encontrado.Nombre || encontrado.nombre || u;
                 localStorage.setItem('appUser', u);
                 localStorage.setItem('appName', nombre);
                 document.getElementById('userNameDisplay').innerText = nombre;
                 document.getElementById('appHeader').classList.remove('hidden');
                 navegarA('home', true);
             } else {
-                alert("Usuario o contraseña incorrectos. Verifique sus datos.");
-                navegarA('login', true);
+                alert("Credenciales incorrectas. Verifique usuario y contraseña.");
             }
         });
 
         document.getElementById('registerForm').addEventListener('submit', (e) => {
             e.preventDefault();
+            const f = document.getElementById('regFecha').value;
             const n = document.getElementById('regNombre').value.trim();
             const u = document.getElementById('regUser').value.trim();
             const p = document.getElementById('regPass').value.trim();
 
-            if (!n || !u || !p) {
-                alert("Todos los campos son obligatorios.");
-                return;
-            }
-
-            // Guardar usuario en LocalStorage para acceso inmediato en navegador
-            const usuariosLocales = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-            const yaExiste = usuariosLocales.some(user => user.usuario.toLowerCase() === u.toLowerCase());
-
-            if (yaExiste) {
+            const locs = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+            if (locs.some(x => x.usuario.toLowerCase() === u.toLowerCase())) {
                 alert("El usuario ya existe.");
                 return;
             }
 
-            usuariosLocales.push({ nombre: n, usuario: u, password: p, fecha: new Date().toISOString() });
-            localStorage.setItem('registeredUsers', JSON.stringify(usuariosLocales));
+            const nuevoRegistro = { fecha: f, nombre: n, usuario: u, password: p };
+            locs.push(nuevoRegistro);
+            localStorage.setItem('registeredUsers', JSON.stringify(locs));
 
-            alert("¡Registro exitoso! Ya puedes iniciar sesión.");
+            alert("Registro exitoso. Ya puede iniciar sesión.");
             navegarA('login', true);
         });
 
-        // PARSER INTELIGENTE DE IMÁGENES (CONVIERTE URLS DE GOOGLE DRIVE Y ENLACES DIRECTOS)
+        // RECONOCIMIENTO DE IMÁGENES (DRIVE O ENLACE DIRECTO)
         function extraerUrlImagen(valor) {
             if (!valor) return null;
             const str = String(valor).trim();
@@ -372,10 +386,35 @@
             return null;
         }
 
-        // DESCARGAR Y PROCESAR LAS 9 BASES DE DATOS EN PARALELO
+        // EXTRAER COORDENADAS (LAT, LNG)
+        function extraerCoordenadas(fila) {
+            for (let key of Object.keys(fila)) {
+                const val = String(fila[key] || '');
+                const kLower = key.toLowerCase();
+
+                // Caso 1: Cadena con lat,lng juntos
+                if (kLower.includes('coordenad') || kLower.includes('ubicacion') || kLower.includes('gps') || kLower.includes('lat')) {
+                    const match = val.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+                    if (match) return [parseFloat(match[1]), parseFloat(match[2])];
+                }
+            }
+
+            // Caso 2: Columnas separadas de Latitud y Longitud
+            let lat = null, lng = null;
+            Object.keys(fila).forEach(k => {
+                const kLower = k.toLowerCase();
+                if (kLower === 'lat' || kLower.includes('latitud')) lat = parseFloat(fila[k]);
+                if (kLower === 'lng' || kLower.includes('longitud')) lng = parseFloat(fila[k]);
+            });
+
+            if (lat && lng && !isNaN(lat) && !isNaN(lng)) return [lat, lng];
+            return null;
+        }
+
+        // BÚSQUEDA MULTI-BASE
         async function buscarEnBasesDeDatos(query) {
             navegarA('loading');
-            document.getElementById('loadingText').innerText = "Consultando simultáneamente las 9 bases de datos...";
+            document.getElementById('loadingText').innerText = "Buscando en las 9 bases de datos...";
 
             const q = query.toLowerCase().trim();
             let totalEscrutados = 0;
@@ -385,15 +424,11 @@
                 try {
                     const res = await fetch(getCsvUrl(sheetId));
                     const text = await res.text();
-                    
                     return new Promise((resolve) => {
                         Papa.parse(text, {
                             header: true,
                             skipEmptyLines: true,
-                            complete: (parsed) => {
-                                let filasBase = parsed.data || [];
-                                resolve({ index: index + 1, filas: filasBase });
-                            },
+                            complete: (parsed) => resolve({ index: index + 1, filas: parsed.data || [] }),
                             error: () => resolve({ index: index + 1, filas: [] })
                         });
                     });
@@ -409,10 +444,7 @@
                 base.filas.forEach(fila => {
                     const coincide = Object.values(fila).some(val => String(val).toLowerCase().includes(q));
                     if (coincide) {
-                        resultados.push({
-                            _base_origen: `Base de Datos #${base.index}`,
-                            _datos: fila
-                        });
+                        resultados.push({ _base_origen: `Base #${base.index}`, _datos: fila });
                     }
                 });
             });
@@ -431,7 +463,7 @@
             if (q) buscarEnBasesDeDatos(q);
         });
 
-        // RENDERIZADO DE RESULTADOS: FOTOGRAFÍAS EN LA PARTE SUPERIOR
+        // RENDERIZAR TARJETAS (FOTOS SIEMPRE ARRIBA)
         function renderizarTarjetasResultados() {
             const container = document.getElementById('resultsGrid');
             container.innerHTML = '';
@@ -439,7 +471,7 @@
             if (datosResultados.length === 0) {
                 container.innerHTML = `
                     <div class="col-span-full text-center py-16 bg-slate-900 border border-slate-800 rounded-2xl">
-                        <p class="text-slate-400 text-sm">No se hallaron coincidencias para el término ingresado.</p>
+                        <p class="text-slate-400 text-sm">No se encontraron registros coincidentes.</p>
                     </div>`;
             } else {
                 datosResultados.forEach((item, index) => {
@@ -447,30 +479,27 @@
                     const card = document.createElement('div');
                     card.className = "bg-slate-900 border border-slate-800 hover:border-blue-500/50 rounded-2xl p-5 shadow-xl cursor-pointer transition flex flex-col justify-between group";
 
-                    // 1. EXTRAER IMÁGENES PRIMERO
                     let fotoPrincipal = null;
-                    let camposTexto = [];
+                    let resumenAtributos = [];
 
                     Object.keys(fila).forEach(key => {
                         const val = fila[key];
                         if (!val) return;
-
                         const imgUrl = extraerUrlImagen(val);
                         if (imgUrl && !fotoPrincipal) {
                             fotoPrincipal = imgUrl;
-                        } else if (!String(val).startsWith('http') && camposTexto.length < 5) {
-                            camposTexto.push({ clave: key, valor: val });
+                        } else if (!String(val).startsWith('http') && resumenAtributos.length < 4) {
+                            resumenAtributos.push({ clave: key, valor: val });
                         }
                     });
 
-                    // 2. CONSTRUIR HTML (FOTOGRAFÍA SIEMPRE EN LA PARTE SUPERIOR)
                     let fotoHtml = fotoPrincipal 
                         ? `<div class="mb-4 overflow-hidden rounded-xl bg-slate-950 border border-slate-800 h-48 w-full">
                              <img src="${fotoPrincipal}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.parentElement.style.display='none'">
                            </div>` 
                         : '';
 
-                    let camposHtml = camposTexto.map(c => `
+                    let camposHtml = resumenAtributos.map(c => `
                         <div class="mb-2">
                             <span class="text-[10px] uppercase font-bold text-blue-400 block tracking-wider">${c.clave}</span>
                             <p class="text-xs text-slate-200 truncate font-medium">${c.valor}</p>
@@ -484,8 +513,8 @@
                             ${camposHtml}
                         </div>
                         <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                            <span class="text-[11px] text-slate-400">Clic para ampliar</span>
-                            <span class="text-xs text-blue-400 font-bold group-hover:translate-x-1 transition flex items-center gap-1">Ver Ficha &rarr;</span>
+                            <span class="text-[11px] text-slate-400">Ver ficha completa</span>
+                            <span class="text-xs text-blue-400 font-bold group-hover:translate-x-1 transition flex items-center gap-1">Ficha &rarr;</span>
                         </div>
                     `;
 
@@ -496,7 +525,7 @@
             navegarA('results');
         }
 
-        // VISTA DE DETALLE RAZONADO Y ORGANIZADO
+        // FICHA TÉCNICA DETALLADA CON MAPA Y ENTREVISTAS
         function verDetalleRegistro(index) {
             const item = datosResultados[index];
             const fila = item._datos;
@@ -504,23 +533,37 @@
             const photosGrid = document.getElementById('detailPhotosGrid');
             const fieldsGrid = document.getElementById('detailFieldsGrid');
             const photosSection = document.getElementById('detailPhotosSection');
+            const mapSection = document.getElementById('detailMapSection');
+            const mapAddress = document.getElementById('detailMapAddress');
+            const interviewSection = document.getElementById('detailInterviewSection');
+            const interviewContent = document.getElementById('detailInterviewContent');
 
             photosGrid.innerHTML = '';
             fieldsGrid.innerHTML = '';
+            interviewContent.innerHTML = '';
 
-            let imagenesEncontradas = [];
+            let imagenes = [];
+            let entrevistas = [];
+            let textoUbicacion = '';
 
             Object.keys(fila).forEach(key => {
                 const val = fila[key];
                 if (!val) return;
 
+                const kLower = key.toLowerCase();
                 const imgUrl = extraerUrlImagen(val);
+
                 if (imgUrl) {
-                    imagenesEncontradas.push({ titulo: key, url: imgUrl });
+                    imagenes.push({ titulo: key, url: imgUrl });
+                } else if (kLower.includes('entrevista') || kLower.includes('declaracion') || kLower.includes('complementaria') || kLower.includes('observaciones') || kLower.includes('sintesis')) {
+                    entrevistas.push(`<strong>${key}:</strong>\n${val}`);
                 } else {
+                    if (kLower.includes('lugar') || kLower.includes('abordamiento') || kLower.includes('detencion') || kLower.includes('ubicacion') || kLower.includes('direccion')) {
+                        textoUbicacion += ` ${val}`;
+                    }
+
                     const fieldDiv = document.createElement('div');
-                    fieldDiv.className = "bg-slate-950 border border-slate-800/80 p-3.5 rounded-xl flex flex-col justify-between";
-                    
+                    fieldDiv.className = "bg-slate-950 border border-slate-800/80 p-3 rounded-xl";
                     let content = `<span class="text-[10px] uppercase font-bold text-blue-400 block tracking-wider mb-1">${key}</span>`;
                     
                     if (String(val).startsWith('http')) {
@@ -534,27 +577,58 @@
                 }
             });
 
-            // MOSTRAR FOTOGRAFÍAS EN LA PARTE SUPERIOR DE LA FICHA
-            if (imagenesEncontradas.length > 0) {
+            // 1. RENDER FOTOGRAFÍAS (ARRIBA)
+            if (imagenes.length > 0) {
                 photosSection.classList.remove('hidden');
-                imagenesEncontradas.forEach(imgObj => {
-                    const imgContainer = document.createElement('div');
-                    imgContainer.className = "relative group cursor-pointer border border-slate-800 rounded-xl overflow-hidden bg-slate-950";
-                    imgContainer.innerHTML = `
-                        <img src="${imgObj.url}" class="h-44 w-auto object-cover rounded-xl group-hover:scale-105 transition duration-300">
+                imagenes.forEach(img => {
+                    const div = document.createElement('div');
+                    div.className = "relative group cursor-pointer border border-slate-800 rounded-xl overflow-hidden bg-slate-950";
+                    div.innerHTML = `
+                        <img src="${img.url}" class="h-44 w-auto object-cover rounded-xl group-hover:scale-105 transition duration-300">
                         <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-bold">Ampliar</div>
                     `;
-                    imgContainer.onclick = () => abrirVisorImagen(imgObj.url);
-                    photosGrid.appendChild(imgContainer);
+                    div.onclick = () => abrirVisorImagen(img.url);
+                    photosGrid.appendChild(div);
                 });
             } else {
                 photosSection.classList.add('hidden');
             }
 
+            // 2. RENDER MAPA DE ABORDAMIENTO / DETENCIÓN
+            const coords = extraerCoordenadas(fila);
+            if (coords) {
+                mapSection.classList.remove('hidden');
+                mapAddress.innerText = textoUbicacion ? `Ubicación registrada: ${textoUbicacion}` : `Coordenadas: ${coords[0]}, ${coords[1]}`;
+                
+                setTimeout(() => {
+                    if (!mapInstance) {
+                        mapInstance = L.map('mapDetail').setView(coords, 14);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '© OpenStreetMap'
+                        }).addTo(mapInstance);
+                        mapMarker = L.marker(coords).addTo(mapInstance);
+                    } else {
+                        mapInstance.setView(coords, 14);
+                        mapMarker.setLatLng(coords);
+                    }
+                    mapInstance.invalidateSize();
+                }, 200);
+            } else {
+                mapSection.classList.add('hidden');
+            }
+
+            // 3. RENDER ENTREVISTA E INFORMACIÓN COMPLEMENTARIA
+            if (entrevistas.length > 0) {
+                interviewSection.classList.remove('hidden');
+                interviewContent.innerHTML = entrevistas.join('\n\n');
+            } else {
+                interviewSection.classList.add('hidden');
+            }
+
             navegarA('detail');
         }
 
-        // VISOR MODAL DE IMÁGENES
+        // VISOR MODAL DE FOTOS
         function abrirVisorImagen(url) {
             document.getElementById('modalImageTarget').src = url;
             document.getElementById('imageModal').classList.remove('hidden');
